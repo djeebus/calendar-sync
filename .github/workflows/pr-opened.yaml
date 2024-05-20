@@ -46,7 +46,7 @@ jobs:
         with:
           filename: '.tool-versions'
           uppercase: 'true'
-          suffix: '_tool_version'
+          postfix: '_tool_version'
 
       - uses: earthly/actions-setup@v1
         with: { version: "v${{ env.EARTHLY_TOOL_VERSION }}" }
