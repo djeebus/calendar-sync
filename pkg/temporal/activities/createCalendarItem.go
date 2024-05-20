@@ -5,7 +5,6 @@ import (
 	"context"
 	"github.com/pkg/errors"
 	"google.golang.org/api/calendar/v3"
-	"time"
 )
 
 type CreateCalendarItemArgs struct {
@@ -38,8 +37,4 @@ func (a Activities) CreateCalendarItem(ctx context.Context, args CreateCalendarI
 	result.CreatedItem = created
 
 	return result, nil
-}
-
-func toDateTime(t time.Time) *calendar.EventDateTime {
-	return &calendar.EventDateTime{DateTime: rfc3339(t)}
 }

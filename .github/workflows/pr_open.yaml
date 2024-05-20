@@ -1,0 +1,55 @@
+# mostly from https://github.com/marketplace/actions/build-and-push-docker-images
+name: Build and push temporary image
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+env:
+  FS_IMAGE: ghcr.io/${{ github.repository }}
+  FS_TAG: pr-${{ github.event.pull_request.number }}
+
+jobs:
+  docker:
+    runs-on: ubuntu-22.04
+
+    permissions:
+      contents: read
+      packages: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/build-image
+        with:
+          image: ${{ env.FS_IMAGE }}
+          tag: ${{ env.FS_TAG }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          message: |
+            Temporary image available at `${{ env.FS_IMAGE }}:${{ env.FS_TAG }}`.
+
+  ci:
+    runs-on: self-hosted
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: wistia/parse-tool-versions@v1.0
+
+      - uses: earthly/actions-setup@v1
+        with: { version: "v${{ env.EARTHLY_TOOL_VERSION }}" }
+
+      - name: Build image
+        shell: bash
+        run: |
+          earthly \
+            +ci \
+              --GOLANG_VERSION=${{ env.GOLANG_TOOL_VERSION }} \
+              --GOLANGCILINT_VERSION=${{ env.GOLANGCI_LINT_TOOL_VERSION }}
