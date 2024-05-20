@@ -39,7 +39,7 @@ test:
     RUN go test ./...
 
 build:
-    FROM +gosrc
+    FROM +godeps
 
     COPY . .
 
