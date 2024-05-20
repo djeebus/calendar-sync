@@ -4,7 +4,6 @@ import (
 	"calendar-sync/pkg/clients"
 	"context"
 	"github.com/pkg/errors"
-	"golang.org/x/oauth2"
 	"google.golang.org/api/calendar/v3"
 )
 
@@ -13,17 +12,20 @@ type InviteGuestArgs struct {
 	CalendarItemID       string
 	Attendees            []*calendar.EventAttendee
 	EmailAddressToInvite string
-
-	Token *oauth2.Token
 }
 
 type InviteGuestResult struct {
 }
 
-func UpdateGuestList(ctx context.Context, args InviteGuestArgs) (InviteGuestResult, error) {
+func (a Activities) UpdateGuestList(ctx context.Context, args InviteGuestArgs) (InviteGuestResult, error) {
 	var result InviteGuestResult
 
-	client, err := clients.GetClient(ctx, args.Token)
+	tokens, err := a.ctr.Database.GetTokens(ctx)
+	if err != nil {
+		return result, errors.Wrap(err, "failed to get tokens")
+	}
+
+	client, err := clients.GetClient(ctx, tokens)
 	if err != nil {
 		return result, errors.Wrap(err, "failed to create client")
 	}

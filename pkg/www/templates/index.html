@@ -1,0 +1,104 @@
+<html>
+<body>
+<div>Hello, world</div>
+{{ if .IsAuthenticated }}
+<div>you are authenticated (<a href="/logout">logout</a>)</div>
+
+<table>
+    <caption>
+        Invite user to all events.
+    </caption>
+    <thead>
+    <tr>
+        <th>Calendar</th>
+        <th>Email</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{ range .Invitations }}
+    <tr>
+        <td>{{ .Calendar.Label }}</td>
+        <td>{{ .EmailAddress }}</td>
+        <td>
+            <form method="post">
+                <input type="hidden" name="inviteID" value="{{ .ID }}">
+                <input type="submit" name="delete" value="delete invite">
+                <input type="submit" name="cmd" value="sync invite">
+            </form>
+        </td>
+    </tr>
+    {{ end }}
+    </tbody>
+    <tfoot>
+    <tr>
+        <td colspan="3">
+            <form method="post">
+                <select id="calendar" name="calendar">
+                    {{ range .Calendars }}
+                    {{ if eq .AccessRole "owner" }}
+                    <option value="{{ .ID }}">{{ .Label }}</option>
+                    {{ end }}
+                    {{ end }}
+                </select>
+                <input type="email" name="email" placeholder="user@domain.com">
+                <input type="submit" name="cmd" value="invite">
+            </form>
+        </td>
+    </tr>
+    </tfoot>
+</table>
+
+<table>
+    <caption>Copy all events from source to destination</caption>
+    <thead>
+    <tr>
+        <th>Source</th>
+        <th>Destination</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{ range .Copies }}
+    <tr>
+        <td>{{ .Source.Label }}</td>
+        <td>{{ .Destination.Label }}</td>
+        <td>
+            <form method="post">
+                <input type="hidden" name="copyID" value="{{ .ID }}">
+                <input type="submit" name="cmd" value="delete copy">
+                <input type="submit" name="cmd" value="sync copy">
+            </form>
+        </td>
+    </tr>
+    {{ end }}
+    </tbody>
+    <tfoot>
+    <tr>
+        <td colspan="2">
+            <form method="post">
+                <select id="source" name="source">
+                    {{ range .Calendars }}
+                    {{ if eq .AccessRole "reader" "freeBusyReader" }}
+                    <option value="{{ .ID }}">{{ .Label }}</option>
+                    {{ end }}
+                    {{ end }}
+                </select>
+
+                <select id="destination" name="destination">
+                    {{ range .Calendars }}
+                    {{ if eq .AccessRole "writer" "owner" }}
+                    <option value="{{ .ID }}">{{ .Label }}</option>
+                    {{ end }}
+                    {{ end }}
+                </select>
+                <input type="submit" name="cmd" value="copy">
+            </form>
+        </td>
+    </tr>
+    </tfoot>
+</table>
+{{ else }}
+<div>you are not authenticated</div>
+<div><a href="/auth/begin">Authenticate</a></div>
+{{ end }}
+</body>
+</html>

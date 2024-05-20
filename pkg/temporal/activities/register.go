@@ -1,8 +1,15 @@
 package activities
 
-import "go.temporal.io/sdk/worker"
+import (
+	"calendar-sync/pkg/container"
+	"go.temporal.io/sdk/worker"
+)
 
-func Register(w worker.Worker) {
-	w.RegisterActivity(GetCalendarEventsActivity)
-	w.RegisterActivity(UpdateGuestList)
+type Activities struct {
+	ctr container.Container
+}
+
+func Register(w worker.Worker, ctr container.Container) {
+	a := Activities{ctr}
+	w.RegisterActivity(&a)
 }

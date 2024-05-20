@@ -1,25 +1,27 @@
+version: "3.5"
 services:
-  mysql:
-    container_name: temporal-mysql
+  postgresql:
+    container_name: temporal-postgresql
     environment:
-      - MYSQL_ROOT_PASSWORD=root
-    image: mysql:${MYSQL_VERSION}
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_USER: temporal
+    image: postgres:${POSTGRESQL_VERSION}
     networks:
       - temporal-network
     ports:
-      - 3306:3306
+      - 5432:5432
     volumes:
-      - /var/lib/mysql
+      - /var/lib/postgresql/data
   temporal:
     container_name: temporal
     depends_on:
-      - mysql
+      - postgresql
     environment:
-      - DB=mysql
-      - DB_PORT=3306
-      - MYSQL_USER=root
-      - MYSQL_PWD=root
-      - MYSQL_SEEDS=mysql
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=temporal
+      - POSTGRES_PWD=temporal
+      - POSTGRES_SEEDS=postgresql
       - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
     image: temporalio/auto-setup:${TEMPORAL_VERSION}
     networks:

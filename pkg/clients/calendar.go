@@ -42,7 +42,7 @@ func init() {
 			TokenURL:      downloadedConfig.Web.TokenURI,
 			AuthStyle:     0,
 		},
-		RedirectURL: fmt.Sprintf("http://localhost:%d", pkg.ListenPort),
+		RedirectURL: fmt.Sprintf("http://localhost:%d/auth/end", pkg.ListenPort),
 		Scopes: []string{
 			"https://www.googleapis.com/auth/calendar",
 		},
