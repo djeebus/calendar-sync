@@ -24,7 +24,7 @@ func (a Activities) CreateCalendarItem(ctx context.Context, args CreateCalendarI
 		return result, errors.Wrap(err, "failed to get tokens")
 	}
 
-	client, err := clients.GetClient(ctx, tokens)
+	client, err := clients.GetClient(ctx, a.ctr.OAuth2Config, tokens)
 	if err != nil {
 		return result, errors.Wrap(err, "failed to create client")
 	}

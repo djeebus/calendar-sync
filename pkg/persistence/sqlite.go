@@ -1,6 +1,7 @@
 package persistence
 
 import (
+	"calendar-sync/pkg"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -10,8 +11,8 @@ import (
 	"golang.org/x/oauth2"
 )
 
-func NewDatabase() (*Database, error) {
-	db, err := sql.Open("sqlite3", "./database.db")
+func NewDatabase(cfg pkg.Config) (*Database, error) {
+	db, err := sql.Open(cfg.DatabaseDriver, cfg.DatabaseSource)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to epen db")
 	}

@@ -10,7 +10,7 @@ import (
 
 func NewWorker(ctx context.Context, ctr container.Container) (worker.Worker, error) {
 	opts := worker.Options{BackgroundActivityContext: ctx}
-	w := worker.New(ctr.TemporalClient, ctr.TaskQueue, opts)
+	w := worker.New(ctr.TemporalClient, ctr.Config.TemporalTaskQueue, opts)
 
 	workflows.Register(w)
 	activities.Register(w, ctr)

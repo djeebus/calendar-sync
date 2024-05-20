@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"calendar-sync/pkg"
 	"calendar-sync/pkg/container"
 	"calendar-sync/pkg/temporal"
 	"calendar-sync/pkg/temporal/workflows"
@@ -25,16 +26,22 @@ var rootCmd = &cobra.Command{
 
 		errs := make(chan error)
 
-		ctr, cleanup, err := container.New(ctx)
+		cfg, err := pkg.ReadConfig()
 		if err != nil {
 			fmt.Println(err.Error())
 			return
 		}
-		defer cleanup()
+
+		ctr, err := container.New(ctx, cfg)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		defer ctr.Close()
 
 		go startTemporalWorker(ctx, ctr, errs)
 
-		go startWebserver(ctx, ctr, ":31425", errs)
+		go startWebserver(ctx, ctr, cfg.Listen, errs)
 
 		go triggerScheduledJobs(ctx, ctr)
 
@@ -45,7 +52,7 @@ var rootCmd = &cobra.Command{
 func triggerScheduledJobs(ctx context.Context, ctr container.Container) {
 	opts1 := client.StartWorkflowOptions{
 		ID:           "hourly-sync-check",
-		TaskQueue:    ctr.TaskQueue,
+		TaskQueue:    ctr.Config.TemporalTaskQueue,
 		CronSchedule: "*/15 * * * *",
 	}
 	if _, err := ctr.TemporalClient.ExecuteWorkflow(ctx, opts1, workflows.CopyAllWorkflow); err != nil {
@@ -54,7 +61,7 @@ func triggerScheduledJobs(ctx context.Context, ctr container.Container) {
 
 	opts2 := client.StartWorkflowOptions{
 		ID:           "hourly-invite-check",
-		TaskQueue:    ctr.TaskQueue,
+		TaskQueue:    ctr.Config.TemporalTaskQueue,
 		CronSchedule: "*/15 * * * *",
 	}
 	if _, err := ctr.TemporalClient.ExecuteWorkflow(ctx, opts2, workflows.InviteAllWorkflow); err != nil {

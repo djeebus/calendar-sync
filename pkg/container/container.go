@@ -1,6 +1,7 @@
 package container
 
 import (
+	"calendar-sync/pkg"
 	"calendar-sync/pkg/clients"
 	"calendar-sync/pkg/persistence"
 	"context"
@@ -10,42 +11,40 @@ import (
 )
 
 type Container struct {
+	Config         pkg.Config
 	Database       *persistence.Database
 	OAuth2Config   *oauth2.Config
 	TemporalClient client.Client
-	TaskQueue      string
 }
 
-func New(ctx context.Context) (Container, func(), error) {
+func (c Container) Close() {
+	c.Database.Close()
+}
+
+func New(ctx context.Context, cfg pkg.Config) (Container, error) {
 	var (
 		ctr Container
 		err error
 	)
 
-	var cleaners []func()
-
-	ctr.TaskQueue = "default"
-
-	ctr.Database, err = persistence.NewDatabase()
+	ctr.Database, err = persistence.NewDatabase(cfg)
 	if err != nil {
-		return ctr, nil, err
+		return ctr, err
 	}
-	cleaners = append(cleaners, ctr.Database.Close)
 
-	ctr.TemporalClient, err = client.DialContext(ctx, client.Options{})
+	ctr.TemporalClient, err = client.DialContext(ctx, client.Options{
+		HostPort:  cfg.TemporalHostPort,
+		Namespace: cfg.TemporalNamespace,
+		Identity:  cfg.TemporalIdentity,
+	})
 	if err != nil {
-		return ctr, nil, errors.Wrap(err, "failed to dial the temporal server")
+		return ctr, errors.Wrap(err, "failed to dial the temporal server")
 	}
 
-	ctr.OAuth2Config = &clients.Config
-
-	return ctr, combineCleaners(cleaners), nil
-}
-
-func combineCleaners(cleaners []func()) func() {
-	return func() {
-		for _, cleaner := range cleaners {
-			cleaner()
-		}
+	ctr.OAuth2Config, err = clients.ReadConfig(cfg.ClientSecretsPath)
+	if err != nil {
+		return ctr, errors.Wrap(err, "failed to read client secrets")
 	}
+
+	return ctr, nil
 }

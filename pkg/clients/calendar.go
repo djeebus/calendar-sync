@@ -6,17 +6,14 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
+	"os"
 )
 
-//go:embed client_secret.json
-var clientSecret []byte
-
-var Config oauth2.Config
-
-func init() {
+func ReadConfig(filename string) (*oauth2.Config, error) {
 	var downloadedConfig struct {
 		Web struct {
 			ClientID                string   `json:"client_id"`
@@ -29,11 +26,16 @@ func init() {
 		} `json:"web"`
 	}
 
-	if err := json.Unmarshal(clientSecret, &downloadedConfig); err != nil {
-		panic("failed to deserialize")
+	clientSecret, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read secrets")
 	}
 
-	Config = oauth2.Config{
+	if err := json.Unmarshal(clientSecret, &downloadedConfig); err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal secrets")
+	}
+
+	return &oauth2.Config{
 		ClientID:     downloadedConfig.Web.ClientID,
 		ClientSecret: downloadedConfig.Web.ClientSecret,
 		Endpoint: oauth2.Endpoint{
@@ -46,10 +48,10 @@ func init() {
 		Scopes: []string{
 			"https://www.googleapis.com/auth/calendar",
 		},
-	}
+	}, nil
 }
 
-func GetClient(ctx context.Context, tokens *oauth2.Token) (*calendar.Service, error) {
-	client := Config.Client(ctx, tokens)
+func GetClient(ctx context.Context, config *oauth2.Config, tokens *oauth2.Token) (*calendar.Service, error) {
+	client := config.Client(ctx, tokens)
 	return calendar.NewService(ctx, option.WithHTTPClient(client))
 }
