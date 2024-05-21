@@ -46,15 +46,14 @@ jobs:
         with:
           filename: '.tool-versions'
           uppercase: 'true'
-          postfix: '_tool_version'
 
       - uses: earthly/actions-setup@v1
-        with: { version: "v${{ env.EARTHLY_TOOL_VERSION }}" }
+        with: { version: "v${{ env.EARTHLY }}" }
 
       - name: Build image
         shell: bash
         run: |
           earthly \
             +ci \
-              --GOLANG_VERSION=${{ env.GOLANG_TOOL_VERSION }} \
-              --GOLANGCILINT_VERSION=${{ env.GOLANGCI_LINT_TOOL_VERSION }}
+              --GOLANG_VERSION=${{ env.GOLANG }} \
+              --GOLANGCILINT_VERSION=${{ env.GOLANGCI_LINT }}
