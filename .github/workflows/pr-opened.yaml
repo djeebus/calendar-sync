@@ -35,7 +35,6 @@ jobs:
           message: |
             Temporary image available at `${{ env.FS_IMAGE }}:${{ env.FS_TAG }}`.
 
-
   ci:
     runs-on: ubuntu-22.04
 
@@ -50,11 +49,11 @@ jobs:
       - uses: earthly/actions-setup@v1
         with: { version: "v${{ env.EARTHLY }}" }
 
-      - name: Build image
+      - name: Run tests
         shell: bash
         run: |
           earthly \
             +ci \
               --GOLANG_VERSION=${{ env.GOLANG }} \
-              --GOLANGCILINT_VERSION=${{ env.GOLANGCI_LINT }}
-              --image=${{ env.FS_IMAGE }}:${{ env.FS_TAG }} \
+              --GOLANGCILINT_VERSION=${{ env.GOLANGCI_LINT }} \
+              --image=${{ env.FS_IMAGE }}:${{ env.FS_TAG }}
