@@ -29,7 +29,7 @@ lint:
 
     COPY . .
 
-    RUN ./golangci-lint-${GOLANGCILINT_VERSION}-linux-amd64/golangci-lint run
+    RUN ./golangci-lint-${GOLANGCILINT_VERSION}-linux-amd64/golangci-lint run --timeout 10m
 
 test:
     FROM +godeps
