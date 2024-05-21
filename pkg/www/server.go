@@ -4,16 +4,18 @@ import (
 	"calendar-sync/pkg/container"
 	"calendar-sync/pkg/www/views"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/pkg/errors"
 )
 
 func NewServer(ctr container.Container) *echo.Echo {
 	e := echo.New()
 	e.Debug = true
-
+	e.Use(middleware.Recover())
 	e.Renderer = newTemplates()
 
 	v := views.New(ctr)
+	e.Use(v.WipeTokenIfInvalid)
 
 	e.GET("/logout", v.Logout)
 	e.GET("/auth/begin", v.BeginAuth)

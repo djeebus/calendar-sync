@@ -7,7 +7,7 @@ import (
 
 type Config struct {
 	ClientSecretsPath string `env:"CS_CLIENT_SECRETS_PATH,required"`
-	Listen            string `env:"CS_LISTEN" envDefault:":31450"`
+	Listen            string `env:"CS_LISTEN" envDefault:":31425"`
 
 	DatabaseDriver string `env:"CS_DATABASE_DRIVER" envDefault:"sqlite3"`
 	DatabaseSource string `env:"CS_DATABASE_SOURCE" envDefault:"./database.db"`

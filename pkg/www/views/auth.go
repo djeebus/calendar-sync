@@ -58,3 +58,17 @@ func (v Views) Logout(c echo.Context) error {
 
 	return c.Redirect(302, "/")
 }
+
+func (v Views) WipeTokenIfInvalid(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		err := next(c)
+		var oauth2err *oauth2.RetrieveError
+		if errors.As(err, &oauth2err) && oauth2err.ErrorCode == "invalid_grant" {
+			if err2 := v.ctr.Database.RemoveTokens(c.Request().Context()); err2 != nil {
+				c.Logger().Warn("failed to remove invalid tokens", err2)
+			}
+			return c.Redirect(302, "/logout")
+		}
+		return err
+	}
+}

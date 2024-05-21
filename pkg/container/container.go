@@ -22,10 +22,11 @@ func (c Container) Close() {
 }
 
 func New(ctx context.Context, cfg pkg.Config) (Container, error) {
-	var (
-		ctr Container
-		err error
-	)
+	var err error
+
+	ctr := Container{
+		Config: cfg,
+	}
 
 	ctr.Database, err = persistence.NewDatabase(cfg)
 	if err != nil {
