@@ -1,1 +1,4 @@
+earthly 0.8.11
+golang 1.22.3
+golangci-lint 1.58.2
 temporal 0.11.0

@@ -31,7 +31,7 @@ func (v Views) SyncCopy(c echo.Context, vals url.Values) error {
 		DestinationCalendarID: config.DestinationID,
 	}
 	opts := client.StartWorkflowOptions{
-		TaskQueue:                                v.ctr.TaskQueue,
+		TaskQueue:                                v.ctr.Config.TemporalTaskQueue,
 		WorkflowExecutionErrorWhenAlreadyStarted: true,
 	}
 	if _, err := v.ctr.TemporalClient.ExecuteWorkflow(ctx, opts, workflows.CopyCalendarWorkflow, args); err != nil {
@@ -63,7 +63,7 @@ func (v Views) SyncInvite(c echo.Context, vals url.Values) error {
 		EmailToAdd: config.EmailAddress,
 	}
 	opts := client.StartWorkflowOptions{
-		TaskQueue:                                v.ctr.TaskQueue,
+		TaskQueue:                                v.ctr.Config.TemporalTaskQueue,
 		WorkflowExecutionErrorWhenAlreadyStarted: true,
 	}
 	if _, err := v.ctr.TemporalClient.ExecuteWorkflow(ctx, opts, workflows.InviteCalendarWorkflow, args); err != nil {

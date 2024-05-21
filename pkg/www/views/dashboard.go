@@ -43,7 +43,7 @@ func (v Views) Dashboard(c echo.Context) error {
 		return errors.Wrap(err, "failed to get tokens")
 	}
 
-	client, err := clients.GetClient(ctx, tokens)
+	client, err := clients.GetClient(ctx, v.ctr.OAuth2Config, tokens)
 	if err != nil {
 		return errors.Wrap(err, "failed to create client")
 	}
