@@ -54,5 +54,8 @@ image:
 
     RUN /bin/calendar-sync --help
 
+release:
+    FROM +image
+
     ARG --required image
     SAVE IMAGE --push ${image}

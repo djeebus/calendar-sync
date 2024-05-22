@@ -8,33 +8,7 @@ on:
       - reopened
       - synchronize
 
-env:
-  FS_IMAGE: ghcr.io/${{ github.repository }}
-  FS_TAG: pr-${{ github.event.pull_request.number }}
-
 jobs:
-  docker:
-    runs-on: ubuntu-22.04
-
-    permissions:
-      contents: read
-      packages: write
-      pull-requests: write
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - uses: ./.github/actions/build-image
-        with:
-          image: ${{ env.FS_IMAGE }}
-          tag: ${{ env.FS_TAG }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          message: |
-            Temporary image available at `${{ env.FS_IMAGE }}:${{ env.FS_TAG }}`.
-
   ci:
     runs-on: ubuntu-22.04
 
