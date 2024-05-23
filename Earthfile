@@ -50,12 +50,14 @@ build:
 image:
     FROM alpine:${ALPINE_VERSION}
 
-    COPY +build/calendar-sync /bin/calendar-sync
+    COPY +build/calendar-sync /bin/
 
     RUN /bin/calendar-sync --help
 
 release:
     FROM +image
+
+    ENTRYPOINT /bin/calendar-sync
 
     ARG --required image
     SAVE IMAGE --push ${image}
