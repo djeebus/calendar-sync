@@ -1,11 +1,9 @@
 package clients
 
 import (
-	"calendar-sync/pkg"
 	"context"
 	_ "embed"
 	"encoding/json"
-	"fmt"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/calendar/v3"
@@ -35,7 +33,7 @@ func ReadConfig(filename string) (*oauth2.Config, error) {
 		return nil, errors.Wrap(err, "failed to unmarshal secrets")
 	}
 
-	return &oauth2.Config{
+	model := oauth2.Config{
 		ClientID:     downloadedConfig.Web.ClientID,
 		ClientSecret: downloadedConfig.Web.ClientSecret,
 		Endpoint: oauth2.Endpoint{
@@ -44,11 +42,16 @@ func ReadConfig(filename string) (*oauth2.Config, error) {
 			TokenURL:      downloadedConfig.Web.TokenURI,
 			AuthStyle:     0,
 		},
-		RedirectURL: fmt.Sprintf("http://localhost:%d/auth/end", pkg.ListenPort),
 		Scopes: []string{
 			"https://www.googleapis.com/auth/calendar",
 		},
-	}, nil
+	}
+
+	for _, redirectUri := range downloadedConfig.Web.RedirectUris {
+		model.RedirectURL = redirectUri
+	}
+
+	return &model, nil
 }
 
 func GetClient(ctx context.Context, config *oauth2.Config, tokens *oauth2.Token) (*calendar.Service, error) {

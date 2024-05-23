@@ -2,8 +2,6 @@ package pkg
 
 import "google.golang.org/api/calendar/v3"
 
-const ListenPort = 31425
-
 type Calendar struct {
 	CalendarID string
 	Summary    string
