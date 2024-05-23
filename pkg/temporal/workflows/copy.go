@@ -40,17 +40,17 @@ func CopyCalendarWorkflow(ctx workflow.Context, args CopyCalendarWorkflowArgs) e
 	if err != nil {
 		return err
 	}
-	sourceItemsByID := toMap(sourceCalendarItems, func(item *calendar.Event) string { return item.Id })
+	sourceItemsByID := pkg.ToMap(sourceCalendarItems, func(item *calendar.Event) string { return item.Id })
 
 	// get destination events
 	destinationCalendarItems, err := getEvents(ctx, args.DestinationCalendarID)
 	if err != nil {
 		return err
 	}
-	destinationCalendarItems = filter(destinationCalendarItems, func(item *calendar.Event) bool {
+	destinationCalendarItems = pkg.Filter(destinationCalendarItems, func(item *calendar.Event) bool {
 		return getExtraByKey(item, pkg.SourceCalendarIDKey) == args.SourceCalendarID
 	})
-	destinationItemsBySourceItemID := toMap(destinationCalendarItems, func(item *calendar.Event) string { return getExtraByKey(item, pkg.SourceCalendarItemIDKey) })
+	destinationItemsBySourceItemID := pkg.ToMap(destinationCalendarItems, func(item *calendar.Event) string { return getExtraByKey(item, pkg.SourceCalendarItemIDKey) })
 
 	// find missing destination events
 	var futures []workflow.Future
@@ -205,24 +205,4 @@ func getEvents(ctx workflow.Context, sourceID string) ([]*calendar.Event, error)
 	}
 
 	return sourceEventsResult.Calendar.Items, nil
-}
-
-func toMap[I any, K comparable](items []I, fn func(I) K) map[K]I {
-	m := make(map[K]I)
-
-	for _, i := range items {
-		m[fn(i)] = i
-	}
-
-	return m
-}
-
-func filter[I any](items []I, fn func(I) bool) []I {
-	var result []I
-	for _, i := range items {
-		if fn(i) {
-			result = append(result, i)
-		}
-	}
-	return result
 }

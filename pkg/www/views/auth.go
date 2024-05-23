@@ -47,16 +47,21 @@ func (v Views) EndAuth(c echo.Context) error {
 	}
 
 	code := r.Form.Get("code")
-	tokens, err := v.ctr.OAuth2Config.Exchange(ctx, code)
+	token, err := v.ctr.OAuth2Config.Exchange(ctx, code)
 	if err != nil {
 		return errors.Wrap(err, "failed to exchange code for token")
 	}
 
-	if !v.isValidUser(c.Request().Context(), tokens) {
+	client, err := clients.GetClient(ctx, v.ctr.OAuth2Config, token)
+	if err != nil {
+		return errors.Wrap(err, "failed to get client")
+	}
+
+	if !v.isValidUser(c.Request().Context(), client) {
 		return errors.Wrap(err, "user is invalid")
 	}
 
-	if err := v.ctr.Database.SetTokens(ctx, tokens); err != nil {
+	if err := v.ctr.Database.SetTokens(ctx, token); err != nil {
 		return errors.Wrap(err, "failed to store tokens")
 	}
 
@@ -98,14 +103,12 @@ func (v Views) RequireClientToken(noAuthPages ...string) echo.MiddlewareFunc {
 	}
 }
 
-func (v Views) isValidUser(ctx context.Context, token *oauth2.Token) bool {
-	client, err := clients.GetClient(ctx, v.ctr.OAuth2Config, token)
-	if err != nil {
-		log.Err(err).Msg("failed to get client")
-		return false
-	}
+func (v Views) isValidUser(ctx context.Context, client *calendar.Service) bool {
+	var (
+		err   error
+		found bool
+	)
 
-	var found bool
 	if err = client.CalendarList.List().Pages(ctx, func(settings *calendar.CalendarList) error {
 		for _, c := range settings.Items {
 			if c.AccessRole != "owner" {

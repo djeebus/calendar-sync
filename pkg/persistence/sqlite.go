@@ -9,59 +9,38 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2"
+	"strconv"
 )
 
-func NewDatabase(cfg pkg.Config) (*Database, error) {
-	db, err := sql.Open(cfg.DatabaseDriver, cfg.DatabaseSource)
+const dbVersionSetting settingType = "db_version"
+
+func NewDatabase(ctx context.Context, cfg pkg.Config) (*Database, error) {
+	conn, err := sql.Open(cfg.DatabaseDriver, cfg.DatabaseSource)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to epen db")
 	}
 
-	if _, err = db.Exec(`
-CREATE TABLE IF NOT EXISTS settings (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    value TEXT NOT NULL
-)`); err != nil {
-		return nil, errors.Wrap(err, "failed to create settings table")
+	db := &Database{db: conn}
+	var nextVersion = 0
+	value, err := db.getSetting(ctx, dbVersionSetting)
+	if err == nil && value != "" {
+		nextVersion, _ = strconv.Atoi(value)
+	}
+	for {
+		query, ok := migrations[nextVersion]
+		if !ok {
+			break
+		}
+		if _, err = conn.ExecContext(ctx, query); err != nil {
+			return nil, errors.Wrapf(err, "failed to migrate to v%d", nextVersion)
+		}
+		if err = db.setSetting(ctx, dbVersionSetting, strconv.Itoa(nextVersion)); err != nil {
+			return nil, errors.Wrap(err, "failed to persist db version")
+		}
+		nextVersion++
 	}
 
-	if _, err = db.Exec(`
-CREATE UNIQUE INDEX IF NOT EXISTS settings_name ON settings(name)`); err != nil {
-		return nil, errors.Wrap(err, "failed to create unique settings index")
-	}
-
-	if _, err = db.Exec(`
-CREATE TABLE IF NOT EXISTS copies (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    sourceID TEXT NOT NULL, 
-    destinationID TEXT NOT NULL
-)`); err != nil {
-		return nil, errors.Wrap(err, "failed to create copies table")
-	}
-
-	if _, err = db.Exec(`
-CREATE UNIQUE INDEX IF NOT EXISTS copies_sourceID_destinationID ON copies (sourceID, destinationID)
-`); err != nil {
-		return nil, errors.Wrap(err, "failed to create unique copies index")
-	}
-
-	if _, err = db.Exec(`
-CREATE TABLE IF NOT EXISTS invites (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    calendarID TEXT NOT NULL, 
-    emailAddress TEXT NOT NULL
-)`); err != nil {
-		return nil, errors.Wrap(err, "failed to create invites table")
-	}
-
-	if _, err = db.Exec(`
-CREATE UNIQUE INDEX IF NOT EXISTS invites_calendarID_emailAddress ON invites (calendarID, emailAddress)
-`); err != nil {
-		return nil, errors.Wrap(err, "failed to create unique invites index")
-	}
-
-	return &Database{db: db}, nil
+	return db, nil
 }
 
 type Database struct {
@@ -231,6 +210,69 @@ VALUES (?, ?)
 	}
 
 	return nil
+}
+
+func (d *Database) CreateWatchConfig(ctx context.Context, calendarID, watchID, token string) error {
+	stmt, err := d.db.PrepareContext(ctx, `
+INSERT INTO watches (calendarID, watchID, token)
+VALUES (?, ?, ?)
+`)
+	if err != nil {
+		return errors.Wrap(err, "failed to prepare statement")
+	}
+	defer stmt.Close()
+
+	if _, err := stmt.ExecContext(ctx, calendarID, watchID, token); err != nil {
+		return errors.Wrap(err, "failed to execute statement")
+	}
+
+	return nil
+}
+
+func (d *Database) GetWatchConfig(ctx context.Context, watchID string) (WatchConfig, error) {
+	var config WatchConfig
+
+	stmt, err := d.db.PrepareContext(ctx, `
+SELECT id, calendarID, watchID, token
+FROM watches
+WHERE watchID = ?`)
+	if err != nil {
+		return config, errors.Wrap(err, "failed to prepare statement")
+	}
+	defer stmt.Close()
+
+	if err := stmt.QueryRowContext(ctx, watchID).Scan(&config.ID, &config.CalendarID, &config.WatchID, &config.Token); err != nil {
+		return config, errors.Wrap(err, "failed to parse row")
+	}
+
+	return config, nil
+}
+
+func (d *Database) GetWatchConfigs(ctx context.Context) ([]WatchConfig, error) {
+	stmt, err := d.db.PrepareContext(ctx, `
+SELECT id, calendarID, watchID, token
+FROM watches
+`)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to prepare statement")
+	}
+	defer stmt.Close()
+
+	cur, err := stmt.QueryContext(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to execute statement")
+	}
+
+	var watches []WatchConfig
+	for cur.Next() {
+		var watch WatchConfig
+		if err = cur.Scan(&watch.ID, &watch.CalendarID, &watch.WatchID, &watch.Token); err != nil {
+			return nil, errors.Wrap(err, "failed to scan row")
+		}
+		watches = append(watches, watch)
+	}
+
+	return watches, nil
 }
 
 func (d *Database) CreateInviteConfig(ctx context.Context, calendarID, emailAddress string) error {

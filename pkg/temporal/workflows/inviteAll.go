@@ -29,7 +29,7 @@ func InviteAllWorkflow(ctx workflow.Context) error {
 
 	inviteConfigs, err := getInvites(ctx)
 	if err != nil {
-		return errors.Wrap(err, "failed to get copies")
+		return errors.Wrap(err, "failed to get invites")
 	}
 
 	for _, inviteConfig := range inviteConfigs {
