@@ -15,6 +15,7 @@ func NewServer(ctr container.Container) *echo.Echo {
 	e.Renderer = newTemplates()
 
 	v := views.New(ctr)
+	e.Use(v.RequireClientToken("/logout", "/auth/begin", "/auth/end"))
 	e.Use(v.WipeTokenIfInvalid)
 
 	e.GET("/logout", v.Logout)
