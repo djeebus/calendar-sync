@@ -78,14 +78,15 @@ func (v Views) RequireClientToken(noAuthPages ...string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			request := c.Request()
-			cookie, err := request.Cookie(authCookieName)
-			if cookie != nil && !v.isAuthCookieValid(cookie) {
-				v.forgetAuthCookie(c.Response())
-				cookie = nil
-				err = http.ErrNoCookie
+			cookie, _ := request.Cookie(authCookieName)
+			if cookie != nil {
+				if !v.isAuthCookieValid(cookie) {
+					v.forgetAuthCookie(c.Response())
+					cookie = nil
+				}
 			}
 
-			if errors.Is(err, http.ErrNoCookie) {
+			if cookie == nil {
 				// the only acceptable time to have no cookie is if you're trying to login
 				if !slices.Contains(noAuthPages, request.URL.Path) {
 					return c.Redirect(302, "/auth/begin")
