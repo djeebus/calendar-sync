@@ -43,6 +43,9 @@ build:
 
     COPY . .
 
+    RUN apk add gcc libc-dev
+
+    ENV CGO_ENABLED=1
     RUN go build -o calendar-sync .
 
     SAVE ARTIFACT calendar-sync AS LOCAL calendar-sync
