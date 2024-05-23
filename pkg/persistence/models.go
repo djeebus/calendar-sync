@@ -11,3 +11,10 @@ type CopyConfig struct {
 	SourceID      string
 	DestinationID string
 }
+
+type WatchConfig struct {
+	ID         int
+	CalendarID string
+	WatchID    string
+	Token      string
+}

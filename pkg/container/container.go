@@ -28,7 +28,7 @@ func New(ctx context.Context, cfg pkg.Config) (Container, error) {
 		Config: cfg,
 	}
 
-	ctr.Database, err = persistence.NewDatabase(cfg)
+	ctr.Database, err = persistence.NewDatabase(ctx, cfg)
 	if err != nil {
 		return ctr, err
 	}

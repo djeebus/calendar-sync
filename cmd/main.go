@@ -67,6 +67,17 @@ func triggerScheduledJobs(ctx context.Context, ctr container.Container) {
 	if _, err := ctr.TemporalClient.ExecuteWorkflow(ctx, opts2, workflows.InviteAllWorkflow); err != nil {
 		log.Err(err).Msg("failed to trigger invite all calendars cronjob")
 	}
+
+	if ctr.Config.WebhookUrl != "" {
+		opts3 := client.StartWorkflowOptions{
+			ID:           "webhook-check",
+			TaskQueue:    ctr.Config.TemporalTaskQueue,
+			CronSchedule: "*/15 * * * *",
+		}
+		if _, err := ctr.TemporalClient.ExecuteWorkflow(ctx, opts3, workflows.WatchAll); err != nil {
+			log.Err(err).Msg("failed to trigger watch all calendars cronjob")
+		}
+	}
 }
 
 func waitForInterrupt(ctx context.Context, errs chan error) {

@@ -11,6 +11,7 @@ type Config struct {
 
 	ClientSecretsPath string `env:"CS_CLIENT_SECRETS_PATH,required"`
 	Listen            string `env:"CS_LISTEN" envDefault:":31425"`
+	WebhookUrl        string `env:"CS_WEBHOOK_URL"`
 
 	DatabaseDriver string `env:"CS_DATABASE_DRIVER" envDefault:"sqlite3"`
 	DatabaseSource string `env:"CS_DATABASE_SOURCE" envDefault:"./database.db"`
