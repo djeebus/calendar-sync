@@ -31,6 +31,7 @@ type dashboard struct {
 	Calendars       []calendarStub
 	Invitations     []invitationStub
 	Copies          []copyStub
+	HasRefreshToken bool
 }
 
 func (v Views) Dashboard(c echo.Context) error {
@@ -97,6 +98,7 @@ func (v Views) Dashboard(c echo.Context) error {
 		Copies:          copyStubs,
 		Invitations:     inviteStubs,
 		IsAuthenticated: true,
+		HasRefreshToken: tokens.RefreshToken != "",
 	}
 
 	return c.Render(200, "index.html", model)
