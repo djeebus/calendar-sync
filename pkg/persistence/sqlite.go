@@ -212,6 +212,22 @@ VALUES (?, ?)
 	return nil
 }
 
+func (d *Database) DeleteCopyConfig(ctx context.Context, copyID string) error {
+	stmt, err := d.db.PrepareContext(ctx, `
+DELETE FROM copies
+WHERE id = ?`)
+	if err != nil {
+		return errors.Wrap(err, "failed to prepare statement")
+	}
+	defer stmt.Close()
+
+	if _, err := stmt.ExecContext(ctx, copyID); err != nil {
+		return errors.Wrap(err, "failed to execute statement")
+	}
+
+	return nil
+}
+
 func (d *Database) CreateWatchConfig(ctx context.Context, calendarID, watchID, token string) error {
 	stmt, err := d.db.PrepareContext(ctx, `
 INSERT INTO watches (calendarID, watchID, token)
@@ -286,6 +302,22 @@ VALUES (?, ?)
 	defer stmt.Close()
 
 	if _, err := stmt.ExecContext(ctx, calendarID, emailAddress); err != nil {
+		return errors.Wrap(err, "failed to execute statement")
+	}
+
+	return nil
+}
+
+func (d *Database) DeleteInviteConfig(ctx context.Context, inviteID string) error {
+	stmt, err := d.db.PrepareContext(ctx, `
+DELETE FROM invites
+WHERE id = ?`)
+	if err != nil {
+		return errors.Wrap(err, "failed to prepare statement")
+	}
+	defer stmt.Close()
+
+	if _, err := stmt.ExecContext(ctx, inviteID); err != nil {
 		return errors.Wrap(err, "failed to execute statement")
 	}
 

@@ -15,15 +15,17 @@ func CopyAllWorkflow(ctx workflow.Context) error {
 		InitialInterval:    1 * time.Minute,
 		BackoffCoefficient: 2.0,
 
-		MaximumAttempts:        0, // infinite attempts
+		MaximumAttempts:        1,
 		MaximumInterval:        1 * time.Hour,
 		NonRetryableErrorTypes: []string{},
 	}
 
 	options := workflow.ActivityOptions{
-		StartToCloseTimeout: 15 * time.Minute,
+		StartToCloseTimeout: 5 * time.Minute,
 		RetryPolicy:         &retryPolicy,
 	}
+
+	ctx = workflow.WithActivityOptions(ctx, options)
 
 	ctx = workflow.WithActivityOptions(ctx, options)
 

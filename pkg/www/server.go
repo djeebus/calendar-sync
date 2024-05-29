@@ -38,6 +38,10 @@ func NewServer(ctr container.Container) *echo.Echo {
 			return v.SyncCopy(c, vals)
 		case "sync invite":
 			return v.SyncInvite(c, vals)
+		case "delete invite":
+			return v.DeleteInviteConfig(c, vals)
+		case "delete copy":
+			return v.DeleteCopyConfig(c, vals)
 		default:
 			return echo.ErrMethodNotAllowed
 		}

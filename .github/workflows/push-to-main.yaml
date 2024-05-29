@@ -39,3 +39,12 @@ jobs:
             +release \
               --image=ghcr.io/${{ github.repository }}:latest \
               --GOLANG_VERSION=${{ env.GOLANG }}
+
+      - uses: clowdhaus/argo-cd-action@v2.0.0
+        env:
+          ARGOCD_SERVER: argocd.thehideaway.social
+          ARGOCD_AUTH_TOKEN: ${{ inputs.token }}
+        with:
+          command: app actions run calendar-sync restart
+          options: --kind Deployment --resource-name calendar-sync
+          version: ${{ env.ARGOCD }}

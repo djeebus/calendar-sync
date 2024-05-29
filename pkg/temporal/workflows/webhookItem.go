@@ -29,7 +29,7 @@ func ProcessWebhookEvent(ctx workflow.Context, args ProcessWebhookEventArgs) err
 		InitialInterval:    1 * time.Minute,
 		BackoffCoefficient: 2.0,
 
-		MaximumAttempts:        0,
+		MaximumAttempts:        1,
 		MaximumInterval:        1 * time.Hour,
 		NonRetryableErrorTypes: []string{},
 	}

@@ -15,7 +15,7 @@ func WatchAll(ctx workflow.Context) error {
 		InitialInterval:    1 * time.Minute,
 		BackoffCoefficient: 2.0,
 
-		MaximumAttempts:        0,
+		MaximumAttempts:        1,
 		MaximumInterval:        1 * time.Hour,
 		NonRetryableErrorTypes: []string{},
 	}
