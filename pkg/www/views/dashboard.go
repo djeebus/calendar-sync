@@ -5,7 +5,9 @@ import (
 	"database/sql"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 	"google.golang.org/api/calendar/v3"
+	"strings"
 )
 
 type calendarStub struct {
@@ -64,6 +66,12 @@ func (v Views) Dashboard(c echo.Context) error {
 
 		return nil
 	}); err != nil {
+		if strings.Contains(err.Error(), "oauth2: token expired and refresh token is not set") {
+			if err = v.ctr.Database.RemoveTokens(ctx); err != nil {
+				log.Warn().Err(err).Msg("failed to remove tokens")
+			}
+			return c.Redirect(302, "/auth/begin")
+		}
 		return errors.Wrap(err, "failed to list calendars")
 	}
 

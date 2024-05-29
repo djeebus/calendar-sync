@@ -43,3 +43,35 @@ func (v Views) CreateInviteConfig(c echo.Context, values url.Values) error {
 
 	return c.Redirect(302, "/")
 }
+
+func (v Views) DeleteCopyConfig(c echo.Context, values url.Values) error {
+	ctx := c.Request().Context()
+
+	copyID := values.Get("copyID")
+	if copyID == "" {
+		return errors.New("missing required field 'copyID'")
+	}
+
+	if err := v.ctr.Database.DeleteCopyConfig(ctx, copyID); err != nil {
+		return errors.Wrap(err, "failed to delete copy config")
+	}
+
+	return c.Redirect(302, "/")
+
+}
+
+func (v Views) DeleteInviteConfig(c echo.Context, values url.Values) error {
+	ctx := c.Request().Context()
+
+	inviteID := values.Get("inviteID")
+	if inviteID == "" {
+		return errors.New("missing required field 'inviteID'")
+	}
+
+	if err := v.ctr.Database.DeleteInviteConfig(ctx, inviteID); err != nil {
+		return errors.Wrap(err, "failed to delete invite config")
+	}
+
+	return c.Redirect(302, "/")
+
+}

@@ -23,7 +23,7 @@ func CopyCalendarWorkflow(ctx workflow.Context, args CopyCalendarWorkflowArgs) e
 		InitialInterval:    1 * time.Minute,
 		BackoffCoefficient: 2.0,
 
-		MaximumAttempts:        0, // infinite attempts
+		MaximumAttempts:        1,
 		MaximumInterval:        1 * time.Hour,
 		NonRetryableErrorTypes: []string{},
 	}
