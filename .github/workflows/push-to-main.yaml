@@ -43,7 +43,7 @@ jobs:
       - uses: clowdhaus/argo-cd-action@v2.0.0
         env:
           ARGOCD_SERVER: argocd.thehideaway.social
-          ARGOCD_AUTH_TOKEN: ${{ inputs.token }}
+          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
         with:
           command: app actions run calendar-sync restart
           options: --kind Deployment --resource-name calendar-sync
