@@ -1,6 +1,7 @@
 package views
 
 import (
+	"database/sql"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
@@ -36,8 +37,12 @@ type dashboard struct {
 func (v Views) Dashboard(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	client, err := v.ctr.GetCalendarClientWithToken(ctx, nil)
+	client, err := v.ctr.GetCalendarClient(ctx)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return c.Redirect(302, "/auth/begin")
+		}
+
 		return errors.Wrap(err, "failed to create client")
 	}
 
