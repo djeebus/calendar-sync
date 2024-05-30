@@ -1,7 +1,6 @@
 package views
 
 import (
-	"calendar-sync/pkg/clients"
 	"context"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -52,7 +51,11 @@ func (v Views) EndAuth(c echo.Context) error {
 		return errors.Wrap(err, "failed to exchange code for token")
 	}
 
-	client, err := clients.GetClient(ctx, v.ctr.OAuth2Config, token)
+	if token.RefreshToken == "" {
+		return errors.New("token does not have a refresh token, need to re-auth")
+	}
+
+	client, err := v.ctr.GetCalendarClientWithToken(ctx, token)
 	if err != nil {
 		return errors.Wrap(err, "failed to get client")
 	}

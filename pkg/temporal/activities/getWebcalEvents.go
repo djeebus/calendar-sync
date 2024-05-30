@@ -2,7 +2,6 @@ package activities
 
 import (
 	"calendar-sync/pkg"
-	"calendar-sync/pkg/clients"
 	"context"
 	"github.com/pkg/errors"
 	"google.golang.org/api/calendar/v3"
@@ -26,12 +25,7 @@ func rfc3339(t time.Time) string {
 func (a Activities) GetCalendarEventsActivity(ctx context.Context, args GetCalendarEventsActivityArgs) (GetCalendarEventsActivityResult, error) {
 	var result GetCalendarEventsActivityResult
 
-	tokens, err := a.ctr.Database.GetTokens(ctx)
-	if err != nil {
-		return result, errors.Wrap(err, "failed to get tokens")
-	}
-
-	client, err := clients.GetClient(ctx, a.ctr.OAuth2Config, tokens)
+	client, err := a.ctr.GetCalendarClient(ctx)
 	if err != nil {
 		return result, errors.Wrap(err, "failed to create client")
 	}

@@ -1,8 +1,6 @@
 package views
 
 import (
-	"calendar-sync/pkg/clients"
-	"database/sql"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
@@ -33,20 +31,12 @@ type dashboard struct {
 	Calendars       []calendarStub
 	Invitations     []invitationStub
 	Copies          []copyStub
-	HasRefreshToken bool
 }
 
 func (v Views) Dashboard(c echo.Context) error {
 	ctx := c.Request().Context()
-	tokens, err := v.ctr.Database.GetTokens(ctx)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return c.Render(200, "index.html", dashboard{IsAuthenticated: false})
-		}
-		return errors.Wrap(err, "failed to get tokens")
-	}
 
-	client, err := clients.GetClient(ctx, v.ctr.OAuth2Config, tokens)
+	client, err := v.ctr.GetCalendarClientWithToken(ctx, nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to create client")
 	}
@@ -106,7 +96,6 @@ func (v Views) Dashboard(c echo.Context) error {
 		Copies:          copyStubs,
 		Invitations:     inviteStubs,
 		IsAuthenticated: true,
-		HasRefreshToken: tokens.RefreshToken != "",
 	}
 
 	return c.Render(200, "index.html", model)
