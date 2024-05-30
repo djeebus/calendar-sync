@@ -120,18 +120,23 @@ func toInsert(sourceCalendarID string, e *calendar.Event) *calendar.Event {
 
 }
 
+func cleanEvent(e *calendar.Event) {
+	if e.Summary == "" {
+		e.Summary = "Busy"
+	}
+
+	if e.EventType == "" {
+		e.EventType = "default"
+	}
+}
+
 func buildPatch(from, to calendar.Event) *calendar.Event {
 	patch := new(calendar.Event)
 	shouldPatch := false
 
 	// perform some clean up
-	if from.Summary == "" {
-		from.Summary = "Busy"
-	}
-
-	if from.EventType == "" {
-		from.EventType = "default"
-	}
+	cleanEvent(&from)
+	cleanEvent(&to)
 
 	// diff
 	if from.EventType != to.EventType {
@@ -166,12 +171,12 @@ func buildPatch(from, to calendar.Event) *calendar.Event {
 			}
 		}
 	}
-	if from.Start != nil && (to.Start == nil || from.Start.DateTime != to.Start.DateTime) {
-		patch.Start = &calendar.EventDateTime{DateTime: from.Start.DateTime}
+	if update := patchDateTime(from.Start, to.Start); update != nil {
+		patch.Start = update
 		shouldPatch = true
 	}
-	if from.End != nil && (to.End == nil || from.End.DateTime != to.End.DateTime) {
-		patch.End = &calendar.EventDateTime{DateTime: to.End.DateTime}
+	if update := patchDateTime(from.End, to.End); update != nil {
+		patch.End = update
 		shouldPatch = true
 	}
 
@@ -205,4 +210,38 @@ func getEvents(ctx workflow.Context, sourceID string) ([]*calendar.Event, error)
 	}
 
 	return sourceEventsResult.Calendar.Items, nil
+}
+
+func patchDateTime(from *calendar.EventDateTime, to *calendar.EventDateTime) *calendar.EventDateTime {
+	if from == nil {
+		return nil
+	}
+
+	if to == nil {
+		return from
+	}
+
+	shouldPatch := false
+	patch := calendar.EventDateTime{}
+
+	if from.Date != to.Date {
+		patch.Date = from.Date
+		shouldPatch = true
+	}
+
+	if from.DateTime != to.DateTime {
+		patch.DateTime = from.DateTime
+		shouldPatch = true
+	}
+
+	if from.TimeZone != to.TimeZone {
+		patch.TimeZone = from.TimeZone
+		shouldPatch = true
+	}
+
+	if !shouldPatch {
+		return nil
+	}
+
+	return &patch
 }
