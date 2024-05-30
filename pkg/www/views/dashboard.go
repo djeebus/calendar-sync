@@ -36,7 +36,7 @@ type dashboard struct {
 func (v Views) Dashboard(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	client, err := v.ctr.GetCalendarClient(ctx)
+	client, err := v.ctr.GetCalendarClientWithToken(ctx, nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to create client")
 	}

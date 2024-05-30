@@ -51,6 +51,10 @@ func (v Views) EndAuth(c echo.Context) error {
 		return errors.Wrap(err, "failed to exchange code for token")
 	}
 
+	if token.RefreshToken == "" {
+		return errors.New("token does not have a refresh token, need to re-auth")
+	}
+
 	client, err := v.ctr.GetCalendarClientWithToken(ctx, token)
 	if err != nil {
 		return errors.Wrap(err, "failed to get client")
