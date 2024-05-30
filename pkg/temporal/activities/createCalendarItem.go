@@ -1,7 +1,6 @@
 package activities
 
 import (
-	"calendar-sync/pkg/clients"
 	"context"
 	"github.com/pkg/errors"
 	"google.golang.org/api/calendar/v3"
@@ -19,12 +18,7 @@ type CreateCalendarItemResult struct {
 func (a Activities) CreateCalendarItem(ctx context.Context, args CreateCalendarItemArgs) (CreateCalendarItemResult, error) {
 	var result CreateCalendarItemResult
 
-	tokens, err := a.ctr.Database.GetTokens(ctx)
-	if err != nil {
-		return result, errors.Wrap(err, "failed to get tokens")
-	}
-
-	client, err := clients.GetClient(ctx, a.ctr.OAuth2Config, tokens)
+	client, err := a.ctr.GetCalendarClient(ctx)
 	if err != nil {
 		return result, errors.Wrap(err, "failed to create client")
 	}

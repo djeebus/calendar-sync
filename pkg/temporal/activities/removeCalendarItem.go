@@ -1,7 +1,6 @@
 package activities
 
 import (
-	"calendar-sync/pkg/clients"
 	"context"
 	"github.com/pkg/errors"
 )
@@ -15,12 +14,7 @@ type RemoveCalendarItemResult struct{}
 func (a Activities) RemoveCalendarItem(ctx context.Context, args RemoveCalendarItemArgs) (RemoveCalendarItemResult, error) {
 	var result RemoveCalendarItemResult
 
-	tokens, err := a.ctr.Database.GetTokens(ctx)
-	if err != nil {
-		return result, errors.Wrap(err, "failed to get tokens")
-	}
-
-	client, err := clients.GetClient(ctx, a.ctr.OAuth2Config, tokens)
+	client, err := a.ctr.GetCalendarClient(ctx)
 	if err != nil {
 		return result, errors.Wrap(err, "failed to create client")
 	}
