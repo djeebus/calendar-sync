@@ -69,10 +69,10 @@ func (c Container) GetCalendarClient(ctx context.Context) (*calendar.Service, er
 				return nil, errors.Wrap(err, "failed to refresh token")
 			}
 
-			// store new tokens
-			if err = c.Database.SetTokens(ctx, tokens); err != nil {
-				return nil, errors.Wrap(err, "failed to store new tokens")
+			if err = c.Database.UpdateTokens(ctx, tokens); err != nil {
+				return nil, errors.Wrap(err, "failed to store updated tokens")
 			}
+
 		}
 	}
 

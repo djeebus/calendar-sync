@@ -73,15 +73,6 @@ func (v Views) EndAuth(c echo.Context) error {
 	return c.Redirect(302, "/")
 }
 
-func (v Views) Logout(c echo.Context) error {
-	ctx := c.Request().Context()
-	if err := v.ctr.Database.RemoveTokens(ctx); err != nil {
-		return errors.Wrap(err, "failed to log out")
-	}
-
-	return c.Redirect(302, "/")
-}
-
 func (v Views) RequireClientToken(noAuthPages ...string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -190,7 +181,7 @@ func (v Views) WipeTokenIfInvalid(next echo.HandlerFunc) echo.HandlerFunc {
 			if err2 := v.ctr.Database.RemoveTokens(c.Request().Context()); err2 != nil {
 				c.Logger().Warn("failed to remove invalid tokens", err2)
 			}
-			return c.Redirect(302, "/logout")
+			return c.Redirect(302, "/auth/begin")
 		}
 		return err
 	}
