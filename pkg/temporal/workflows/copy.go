@@ -3,6 +3,7 @@ package workflows
 import (
 	"calendar-sync/pkg"
 	"calendar-sync/pkg/temporal/activities"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
@@ -101,7 +102,7 @@ func CopyCalendarWorkflow(ctx workflow.Context, args CopyCalendarWorkflowArgs) e
 }
 
 func toInsert(sourceCalendarID string, e *calendar.Event) *calendar.Event {
-	return &calendar.Event{
+	event := calendar.Event{
 		Description: e.Description,
 		End:         e.End,
 		EventType:   e.EventType,
@@ -118,6 +119,9 @@ func toInsert(sourceCalendarID string, e *calendar.Event) *calendar.Event {
 		Summary:  e.Summary,
 	}
 
+	cleanEvent(&event)
+
+	return &event
 }
 
 func cleanEvent(e *calendar.Event) {
@@ -130,61 +134,106 @@ func cleanEvent(e *calendar.Event) {
 	}
 }
 
-func buildPatch(from, to calendar.Event) *calendar.Event {
-	patch := new(calendar.Event)
-	shouldPatch := false
+type patchable[P any] struct {
+	log             zerolog.Logger
+	from, to, patch *P
+	shouldPatch     bool
+}
 
-	// perform some clean up
-	cleanEvent(&from)
-	cleanEvent(&to)
+func diffSlice[P any, T comparable](p *patchable[P], field string, fn func(e *P) *[]T) {
+	from := *fn(p.from)
+	to := *fn(p.to)
 
-	// diff
-	if from.EventType != to.EventType {
-		patch.EventType = from.EventType
-		shouldPatch = true
-	}
-	if from.Location != to.Location {
-		patch.Location = from.Location
-		shouldPatch = true
-	}
-	if from.Status != to.Status {
-		patch.Status = from.Status
-		shouldPatch = true
-	}
-	if from.Summary != to.Summary {
-		patch.Summary = from.Summary
-		shouldPatch = true
-	}
-	if from.Description != to.Description {
-		patch.Description = from.Description
-		shouldPatch = true
-	}
-	if len(from.Recurrence) != len(to.Recurrence) {
-		patch.Recurrence = from.Recurrence
+	var shouldPatch bool
+	if len(from) != len(to) {
+		p.log.Info().
+			Any("source", from).
+			Any("destination", to).
+			Msgf("%s has different length", field)
+
 		shouldPatch = true
 	} else {
-		for idx := range from.Recurrence {
-			if from.Recurrence[idx] != to.Recurrence[idx] {
-				patch.Recurrence = from.Recurrence
+		for idx := range from {
+			if from[idx] != to[idx] {
+				p.log.Info().
+					Any("source", from[idx]).
+					Any("destination", to[idx]).
+					Msgf("%s is different at index #%d", field, idx)
+
 				shouldPatch = true
 				break
 			}
 		}
 	}
-	if update := patchDateTime(from.Start, to.Start); update != nil {
-		patch.Start = update
-		shouldPatch = true
-	}
-	if update := patchDateTime(from.End, to.End); update != nil {
-		patch.End = update
-		shouldPatch = true
-	}
 
 	if !shouldPatch {
+		return
+	}
+
+	patch := fn(p.patch)
+	*patch = from
+	p.shouldPatch = true
+}
+
+func diff[P any, T comparable](p *patchable[P], field string, fn func(e *P) *T) {
+	from := *fn(p.from)
+	to := *fn(p.to)
+
+	if from == to {
+		return
+	}
+
+	p.log.Info().
+		Any("source", from).
+		Any("destination", to).
+		Msgf("%s is different", field)
+
+	patch := fn(p.patch)
+	*patch = from
+	p.shouldPatch = true
+}
+
+func buildPatch(from, to calendar.Event) *calendar.Event {
+	logger := log.With().
+		Str("source_event_id", from.Id).
+		Str("destination_event_id", to.Id).
+		Logger()
+
+	var patch calendar.Event
+
+	// perform some clean up
+	cleanEvent(&from)
+	cleanEvent(&to)
+
+	p := &patchable[calendar.Event]{
+		log:   logger,
+		from:  &from,
+		to:    &to,
+		patch: &patch,
+	}
+
+	// diff
+	diff(p, "event_type", func(e *calendar.Event) *string { return &e.EventType })
+	diff(p, "location", func(e *calendar.Event) *string { return &e.Location })
+	diff(p, "status", func(e *calendar.Event) *string { return &e.Status })
+	diff(p, "summary", func(e *calendar.Event) *string { return &e.Summary })
+	diff(p, "description", func(e *calendar.Event) *string { return &e.Description })
+	diffSlice(p, "recurrence", func(e *calendar.Event) *[]string { return &e.Recurrence })
+
+	if update := patchDateTime(logger, "start", from.Start, to.Start); update != nil {
+		patch.Start = update
+		p.shouldPatch = true
+	}
+	if update := patchDateTime(logger, "end", from.End, to.End); update != nil {
+		patch.End = update
+		p.shouldPatch = true
+	}
+
+	if !p.shouldPatch {
 		return nil
 	}
 
-	return patch
+	return &patch
 }
 
 func getExtraByKey(item *calendar.Event, key string) string {
@@ -212,7 +261,7 @@ func getEvents(ctx workflow.Context, sourceID string) ([]*calendar.Event, error)
 	return sourceEventsResult.Calendar.Items, nil
 }
 
-func patchDateTime(from *calendar.EventDateTime, to *calendar.EventDateTime) *calendar.EventDateTime {
+func patchDateTime(log zerolog.Logger, field string, from *calendar.EventDateTime, to *calendar.EventDateTime) *calendar.EventDateTime {
 	if from == nil {
 		return nil
 	}
@@ -221,25 +270,19 @@ func patchDateTime(from *calendar.EventDateTime, to *calendar.EventDateTime) *ca
 		return from
 	}
 
-	shouldPatch := false
 	patch := calendar.EventDateTime{}
-
-	if from.Date != to.Date {
-		patch.Date = from.Date
-		shouldPatch = true
+	p := &patchable[calendar.EventDateTime]{
+		log:   log.With().Str("datetime field", field).Logger(),
+		from:  from,
+		to:    to,
+		patch: &patch,
 	}
 
-	if from.DateTime != to.DateTime {
-		patch.DateTime = from.DateTime
-		shouldPatch = true
-	}
+	diff(p, "date", func(dt *calendar.EventDateTime) *string { return &dt.Date })
+	diff(p, "datetime", func(dt *calendar.EventDateTime) *string { return &dt.DateTime })
+	diff(p, "timezone", func(dt *calendar.EventDateTime) *string { return &dt.TimeZone })
 
-	if from.TimeZone != to.TimeZone {
-		patch.TimeZone = from.TimeZone
-		shouldPatch = true
-	}
-
-	if !shouldPatch {
+	if !p.shouldPatch {
 		return nil
 	}
 

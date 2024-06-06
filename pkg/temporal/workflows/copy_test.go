@@ -1,9 +1,14 @@
 package workflows
 
 import (
+	"calendar-sync/pkg"
+	"calendar-sync/pkg/temporal/activities"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"go.temporal.io/sdk/testsuite"
 	"google.golang.org/api/calendar/v3"
 	"testing"
+	"time"
 )
 
 func TestBuildPatch(t *testing.T) {
@@ -122,4 +127,129 @@ func TestBuildPatch(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCopyCalendarWorkflow(t *testing.T) {
+	var ts testsuite.WorkflowTestSuite
+	env := ts.NewTestWorkflowEnvironment()
+
+	// setup source calendar
+	sourceCalendarCopiedEvent := &calendar.Event{
+		Id:    "source-calendar-id-copied-event",
+		Start: &calendar.EventDateTime{DateTime: time.Now().Format(time.RFC3339)},
+		End:   &calendar.EventDateTime{DateTime: time.Now().Format(time.RFC3339)},
+	}
+	extraSourceCalendarEvent := &calendar.Event{
+		Id:    "source-calendar-id-new-event",
+		Start: &calendar.EventDateTime{DateTime: time.Now().Format(time.RFC3339)},
+		End:   &calendar.EventDateTime{DateTime: time.Now().Format(time.RFC3339)},
+	}
+	sourceCalendar := pkg.Calendar{
+		CalendarID: "source-calendar-id",
+		Summary:    "some interesting calendar",
+		Items: []*calendar.Event{
+			sourceCalendarCopiedEvent,
+			extraSourceCalendarEvent,
+		},
+	}
+
+	// setup destination calendar
+	destinationCalendarCopiedEvent := &calendar.Event{
+		Id:    "destination-calendar-id-copied-event",
+		Start: &calendar.EventDateTime{DateTime: time.Now().Format(time.RFC3339)},
+		End:   &calendar.EventDateTime{DateTime: time.Now().Format(time.RFC3339)},
+		ExtendedProperties: &calendar.EventExtendedProperties{
+			Private: map[string]string{
+				pkg.SourceCalendarIDKey:     sourceCalendar.CalendarID,
+				pkg.SourceCalendarItemIDKey: sourceCalendarCopiedEvent.Id,
+			},
+		},
+	}
+	destinationCalendarDuplicateCopiedEvent := &calendar.Event{
+		Id:    "destination-calendar-id-duplicate-copied-event",
+		Start: &calendar.EventDateTime{DateTime: time.Now().Format(time.RFC3339)},
+		End:   &calendar.EventDateTime{DateTime: time.Now().Format(time.RFC3339)},
+		ExtendedProperties: &calendar.EventExtendedProperties{
+			Private: map[string]string{
+				pkg.SourceCalendarIDKey:     sourceCalendar.CalendarID,
+				pkg.SourceCalendarItemIDKey: sourceCalendarCopiedEvent.Id,
+			},
+		},
+	}
+	extraDestinationCalendarEvent := &calendar.Event{
+		Id:    "destination-calendar-id-new-event",
+		Start: &calendar.EventDateTime{DateTime: time.Now().Format(time.RFC3339)},
+		End:   &calendar.EventDateTime{DateTime: time.Now().Format(time.RFC3339)},
+	}
+	destinationCalendar := pkg.Calendar{
+		CalendarID: "destination-calendar-id",
+		Summary:    "a calendar full of copies",
+		Items: []*calendar.Event{
+			destinationCalendarCopiedEvent,
+			extraDestinationCalendarEvent,
+			destinationCalendarDuplicateCopiedEvent,
+		},
+	}
+
+	// set up workflows
+	env.RegisterWorkflow(CopyCalendarWorkflow)
+
+	// set up activities
+	var a activities.Activities
+	env.RegisterActivity(&a)
+	env.
+		OnActivity(
+			a.GetCalendarEventsActivity,
+			mock.Anything,
+			activities.GetCalendarEventsActivityArgs{CalendarID: sourceCalendar.CalendarID},
+		).
+		Return(activities.GetCalendarEventsActivityResult{Calendar: sourceCalendar}, nil)
+
+	env.
+		OnActivity(
+			a.GetCalendarEventsActivity,
+			mock.Anything,
+			activities.GetCalendarEventsActivityArgs{CalendarID: destinationCalendar.CalendarID},
+		).
+		Return(activities.GetCalendarEventsActivityResult{Calendar: destinationCalendar}, nil)
+	env.
+		OnActivity(
+			a.CreateCalendarItem,
+			mock.Anything,
+			mock.MatchedBy(func(args activities.CreateCalendarItemArgs) bool {
+				if args.CalendarID != destinationCalendar.CalendarID {
+					return false
+				}
+				if args.Event == nil || args.Event.ExtendedProperties == nil || args.Event.ExtendedProperties.Private == nil {
+					return false
+				}
+
+				private := args.Event.ExtendedProperties.Private
+
+				if value, ok := private[pkg.SourceCalendarIDKey]; !ok {
+					return false
+				} else if value != sourceCalendar.CalendarID {
+					return false
+				}
+
+				if value, ok := private[pkg.SourceCalendarItemIDKey]; !ok {
+					return false
+				} else if value != extraSourceCalendarEvent.Id {
+					return false
+				}
+
+				return true
+			}),
+		).
+		Return(activities.CreateCalendarItemResult{CreatedItem: &calendar.Event{}}, nil)
+
+	// execute workflow
+	args := CopyCalendarWorkflowArgs{
+		SourceCalendarID:      sourceCalendar.CalendarID,
+		DestinationCalendarID: destinationCalendar.CalendarID,
+	}
+	env.ExecuteWorkflow(CopyCalendarWorkflow, args)
+
+	// verify result
+	env.AssertExpectations(t)
 }
