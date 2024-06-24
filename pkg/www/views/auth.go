@@ -52,6 +52,13 @@ func (v Views) EndAuth(c echo.Context) error {
 	}
 
 	if token.RefreshToken == "" {
+		dbTokens, err := v.ctr.Database.GetTokens(ctx)
+		if err == nil {
+			token.RefreshToken = dbTokens.RefreshToken
+		}
+	}
+
+	if token.RefreshToken == "" {
 		return errors.New("token does not have a refresh token, need to re-auth")
 	}
 
