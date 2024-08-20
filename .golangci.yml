@@ -2,8 +2,12 @@ linters:
   enable-all: true
 
   disable:
+    # deprecated
     - execinquery
     - gomnd
+
+    # annoying
+    - wsl
 
 linters-settings:
   depguard:
