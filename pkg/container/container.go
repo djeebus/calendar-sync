@@ -2,12 +2,16 @@ package container
 
 import (
 	"calendar-sync/pkg"
+	"calendar-sync/pkg/logs"
 	"calendar-sync/pkg/persistence"
+	"calendar-sync/pkg/tracing"
 	"context"
 	"encoding/json"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/workflow"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
@@ -18,6 +22,7 @@ type Container struct {
 	Config         pkg.Config
 	Database       *persistence.Database
 	OAuth2Config   *oauth2.Config
+	Logger         zerolog.Logger
 	TemporalClient client.Client
 }
 
@@ -30,6 +35,7 @@ func New(ctx context.Context, cfg pkg.Config) (Container, error) {
 
 	ctr := Container{
 		Config: cfg,
+		Logger: logs.New(cfg),
 	}
 
 	ctr.Database, err = persistence.NewDatabase(ctx, cfg)
@@ -41,6 +47,10 @@ func New(ctx context.Context, cfg pkg.Config) (Container, error) {
 		HostPort:  cfg.TemporalHostPort,
 		Namespace: cfg.TemporalNamespace,
 		Identity:  cfg.TemporalIdentity,
+		Logger:    logs.NewTemporalLogger(ctr.Logger),
+		ContextPropagators: []workflow.ContextPropagator{
+			tracing.NewCorrelationIDPropagator(),
+		},
 	})
 	if err != nil {
 		return ctr, errors.Wrap(err, "failed to dial the temporal server")

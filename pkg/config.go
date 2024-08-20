@@ -3,11 +3,16 @@ package pkg
 import (
 	"github.com/caarlos0/env/v11"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
+	"reflect"
 	"time"
 )
 
 type Config struct {
 	OwnerEmailAddress string `env:"CS_OWNER_EMAIL_ADDRESS,required"`
+
+	LogJson  bool          `env:"CS_LOG_JSON" envDefault:"true"`
+	LogLevel zerolog.Level `env:"CS_LOG_LEVEL" envDefault:"INFO"`
 
 	ClientSecretsPath string `env:"CS_CLIENT_SECRETS_PATH,required"`
 	Listen            string `env:"CS_LISTEN" envDefault:":31425"`
@@ -30,7 +35,15 @@ type Config struct {
 func ReadConfig() (Config, error) {
 	var cfg Config
 
-	if err := env.Parse(&cfg); err != nil {
+	opts := env.Options{
+		FuncMap: map[reflect.Type]env.ParserFunc{
+			reflect.TypeOf(zerolog.DebugLevel): func(v string) (interface{}, error) {
+				return zerolog.ParseLevel(v)
+			},
+		},
+	}
+
+	if err := env.ParseWithOptions(&cfg, opts); err != nil {
 		return cfg, errors.Wrap(err, "failed to parse config")
 	}
 

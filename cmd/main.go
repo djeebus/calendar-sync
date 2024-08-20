@@ -3,18 +3,19 @@ package cmd
 import (
 	"calendar-sync/pkg"
 	"calendar-sync/pkg/container"
+	"calendar-sync/pkg/logs"
 	"calendar-sync/pkg/temporal"
 	"calendar-sync/pkg/temporal/workflows"
 	"calendar-sync/pkg/www"
 	"context"
 	"fmt"
 	"github.com/pkg/errors"
-	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"go.temporal.io/sdk/client"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 var rootCmd = &cobra.Command{
@@ -43,17 +44,30 @@ var rootCmd = &cobra.Command{
 
 		go startWebserver(ctx, ctr, cfg.Listen, errs)
 
-		go triggerScheduledJobs(ctx, ctr)
+		go func() {
+			// reschedule cron job every 24 hours.
+			// if temporal restarts, these jobs disappear
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(time.Hour * 24):
+					triggerScheduledJobs(ctx, ctr)
+				}
+			}
+		}()
 
 		waitForInterrupt(ctx, errs)
 	},
 }
 
 func triggerScheduledJobs(ctx context.Context, ctr container.Container) {
+	log := logs.GetLogger(ctx)
+
 	opts1 := client.StartWorkflowOptions{
 		ID:           "hourly-sync-check",
 		TaskQueue:    ctr.Config.TemporalTaskQueue,
-		CronSchedule: "*/15 * * * *",
+		CronSchedule: "0 * * * *",
 	}
 	if _, err := ctr.TemporalClient.ExecuteWorkflow(ctx, opts1, workflows.CopyAllWorkflow); err != nil {
 		log.Err(err).Msg("failed to trigger copy all calendars cronjob")
@@ -62,7 +76,7 @@ func triggerScheduledJobs(ctx context.Context, ctr container.Container) {
 	opts2 := client.StartWorkflowOptions{
 		ID:           "hourly-invite-check",
 		TaskQueue:    ctr.Config.TemporalTaskQueue,
-		CronSchedule: "*/15 * * * *",
+		CronSchedule: "15 * * * *",
 	}
 	if _, err := ctr.TemporalClient.ExecuteWorkflow(ctx, opts2, workflows.InviteAllWorkflow); err != nil {
 		log.Err(err).Msg("failed to trigger invite all calendars cronjob")
@@ -72,7 +86,7 @@ func triggerScheduledJobs(ctx context.Context, ctr container.Container) {
 		opts3 := client.StartWorkflowOptions{
 			ID:           "webhook-check",
 			TaskQueue:    ctr.Config.TemporalTaskQueue,
-			CronSchedule: "*/15 * * * *",
+			CronSchedule: "30 * * * *",
 		}
 		if _, err := ctr.TemporalClient.ExecuteWorkflow(ctx, opts3, workflows.WatchAll); err != nil {
 			log.Err(err).Msg("failed to trigger watch all calendars cronjob")
