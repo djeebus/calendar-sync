@@ -6,6 +6,7 @@ import (
 	"go.temporal.io/sdk/interceptor"
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
+	"os"
 )
 
 type temporalLogger struct {
@@ -120,5 +121,10 @@ func GetWorkflowLogger(ctx workflow.Context) *zerolog.Logger {
 		}
 	}
 
-	return zerolog.DefaultContextLogger
+	if logger := zerolog.DefaultContextLogger; logger != nil {
+		return zerolog.DefaultContextLogger
+	}
+
+	logger := zerolog.New(os.Stdout)
+	return &logger
 }
