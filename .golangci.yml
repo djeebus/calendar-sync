@@ -1,0 +1,13 @@
+linters:
+  enable-all: true
+
+  disable:
+    - execinquery
+    - gomnd
+
+linters-settings:
+  depguard:
+    rules:
+      Main:
+        allow:
+          - calendar-sync/cmd
