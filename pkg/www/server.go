@@ -2,19 +2,28 @@ package www
 
 import (
 	"calendar-sync/pkg/container"
+	"calendar-sync/pkg/logs"
+	"calendar-sync/pkg/tracing"
 	"calendar-sync/pkg/www/views"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pkg/errors"
+	"github.com/ziflex/lecho/v3"
 )
 
 func NewServer(ctr container.Container) *echo.Echo {
 	e := echo.New()
 	e.Debug = true
-	e.Use(middleware.Recover())
+	e.HideBanner = true
+	e.Logger = lecho.From(ctr.Logger)
 	e.Renderer = newTemplates()
 
 	v := views.New(ctr)
+
+	e.Use(tracing.GenerateCorrelationID())
+	e.Use(logs.CreateRequestLogger(ctr.Logger))
+	e.Use(logs.LogRequest())
+	e.Use(middleware.Recover())
 	e.Use(v.RequireClientToken("/auth/begin", "/auth/end", "/hooks/calendar"))
 	e.Use(v.WipeTokenIfInvalid)
 

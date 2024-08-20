@@ -3,13 +3,13 @@ package cmd
 import (
 	"calendar-sync/pkg"
 	"calendar-sync/pkg/container"
+	"calendar-sync/pkg/logs"
 	"calendar-sync/pkg/temporal"
 	"calendar-sync/pkg/temporal/workflows"
 	"calendar-sync/pkg/www"
 	"context"
 	"fmt"
 	"github.com/pkg/errors"
-	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"go.temporal.io/sdk/client"
 	"os"
@@ -62,6 +62,8 @@ var rootCmd = &cobra.Command{
 }
 
 func triggerScheduledJobs(ctx context.Context, ctr container.Container) {
+	log := logs.GetLogger(ctx)
+
 	opts1 := client.StartWorkflowOptions{
 		ID:           "hourly-sync-check",
 		TaskQueue:    ctr.Config.TemporalTaskQueue,
