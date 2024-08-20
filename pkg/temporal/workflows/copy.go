@@ -2,9 +2,9 @@ package workflows
 
 import (
 	"calendar-sync/pkg"
+	"calendar-sync/pkg/logs"
 	"calendar-sync/pkg/temporal/activities"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"google.golang.org/api/calendar/v3"
@@ -19,6 +19,7 @@ type CopyCalendarWorkflowArgs struct {
 func CopyCalendarWorkflow(ctx workflow.Context, args CopyCalendarWorkflowArgs) error {
 	// setup
 	var a activities.Activities
+	log := logs.GetWorkflowLogger(ctx)
 
 	retryPolicy := temporal.RetryPolicy{
 		InitialInterval:    1 * time.Minute,
@@ -57,7 +58,7 @@ func CopyCalendarWorkflow(ctx workflow.Context, args CopyCalendarWorkflowArgs) e
 	var futures []workflow.Future
 	for key, sourceItem := range sourceItemsByID {
 		if destItem, ok := destinationItemsBySourceItemID[key]; ok {
-			if patch := buildPatch(*sourceItem, *destItem); patch != nil {
+			if patch := buildPatch(log, *sourceItem, *destItem); patch != nil {
 				updateArgs := activities.UpdateCalendarItemArgs{
 					CalendarID:     args.DestinationCalendarID,
 					CalendarItemID: destItem.Id,
@@ -193,7 +194,7 @@ func diff[P any, T comparable](p *patchable[P], field string, fn func(e *P) *T) 
 	p.shouldPatch = true
 }
 
-func buildPatch(from, to calendar.Event) *calendar.Event {
+func buildPatch(log *zerolog.Logger, from, to calendar.Event) *calendar.Event {
 	logger := log.With().
 		Str("source_event_id", from.Id).
 		Str("destination_event_id", to.Id).

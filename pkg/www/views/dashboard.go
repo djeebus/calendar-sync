@@ -1,10 +1,10 @@
 package views
 
 import (
+	"calendar-sync/pkg/logs"
 	"database/sql"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
-	"github.com/rs/zerolog/log"
 	"google.golang.org/api/calendar/v3"
 	"strings"
 )
@@ -63,6 +63,7 @@ func (v Views) Dashboard(c echo.Context) error {
 	}); err != nil {
 		if strings.Contains(err.Error(), "oauth2: token expired and refresh token is not set") {
 			if err = v.ctr.Database.RemoveTokens(ctx); err != nil {
+				log := logs.GetLogger(ctx)
 				log.Warn().Err(err).Msg("failed to remove tokens")
 			}
 			return c.Redirect(302, "/auth/begin")

@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/workflow"
 	"golang.org/x/oauth2"
@@ -65,6 +64,8 @@ func New(ctx context.Context, cfg pkg.Config) (Container, error) {
 }
 
 func (c Container) GetCalendarClient(ctx context.Context) (*calendar.Service, error) {
+	log := logs.GetLogger(ctx)
+
 	tokens, err := c.Database.GetTokens(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get tokens")

@@ -1,12 +1,12 @@
 package views
 
 import (
+	"calendar-sync/pkg/logs"
 	"context"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
-	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/calendar/v3"
 	"net/http"
@@ -75,7 +75,7 @@ func (v Views) EndAuth(c echo.Context) error {
 		return errors.Wrap(err, "failed to store tokens")
 	}
 
-	v.setAuthCookie(c.Response())
+	v.setAuthCookie(ctx, c.Response())
 
 	return c.Redirect(302, "/")
 }
@@ -86,7 +86,7 @@ func (v Views) RequireClientToken(noAuthPages ...string) echo.MiddlewareFunc {
 			request := c.Request()
 			cookie, _ := request.Cookie(authCookieName)
 			if cookie != nil {
-				if !v.isAuthCookieValid(cookie) {
+				if !v.isAuthCookieValid(c.Request().Context(), cookie) {
 					v.forgetAuthCookie(c.Response())
 					cookie = nil
 				}
@@ -123,12 +123,13 @@ func (v Views) isValidUser(ctx context.Context, client *calendar.Service) bool {
 		}
 		return nil
 	}); err != nil {
+		log := logs.GetLogger(ctx)
 		log.Error().Err(err).Msg("failed to read settings")
 	}
 	return found
 }
 
-func (v Views) setAuthCookie(response *echo.Response) {
+func (v Views) setAuthCookie(ctx context.Context, response *echo.Response) {
 	expiration := time.Now().Add(v.ctr.Config.JwtDuration)
 
 	alg := jwt.GetSigningMethod(v.ctr.Config.JwtAlgorithm)
@@ -138,6 +139,7 @@ func (v Views) setAuthCookie(response *echo.Response) {
 	})
 	token, err := signer.SignedString([]byte(v.ctr.Config.JwtSecretKey))
 	if err != nil {
+		log := logs.GetLogger(ctx)
 		log.Error().Err(err).Msg("failed to create jwt")
 		return
 	}
@@ -152,7 +154,9 @@ func (v Views) setAuthCookie(response *echo.Response) {
 	http.SetCookie(response.Writer, &cookie)
 }
 
-func (v Views) isAuthCookieValid(cookie *http.Cookie) bool {
+func (v Views) isAuthCookieValid(ctx context.Context, cookie *http.Cookie) bool {
+	log := logs.GetLogger(ctx)
+
 	token, err := jwt.Parse(cookie.Value, func(token *jwt.Token) (interface{}, error) {
 		return []byte(v.ctr.Config.JwtSecretKey), nil
 	})
