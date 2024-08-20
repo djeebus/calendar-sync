@@ -3,10 +3,12 @@ package workflows
 import (
 	"calendar-sync/pkg"
 	"calendar-sync/pkg/temporal/activities"
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.temporal.io/sdk/testsuite"
 	"google.golang.org/api/calendar/v3"
+	"os"
 	"testing"
 	"time"
 )
@@ -119,7 +121,8 @@ func TestBuildPatch(t *testing.T) {
 
 	for key, tc := range testcases {
 		t.Run(key, func(t *testing.T) {
-			actual := buildPatch(tc.from, tc.to)
+			log := zerolog.New(os.Stdout)
+			actual := buildPatch(&log, tc.from, tc.to)
 			if tc.expected == nil {
 				assert.Nil(t, actual)
 			} else {
