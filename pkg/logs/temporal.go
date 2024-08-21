@@ -4,8 +4,6 @@ import (
 	"context"
 	"os"
 
-	"go.temporal.io/sdk/activity"
-
 	"github.com/rs/zerolog"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/interceptor"
