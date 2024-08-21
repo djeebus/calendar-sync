@@ -2,10 +2,12 @@ package logs
 
 import (
 	"context"
-	"go.temporal.io/sdk/activity"
 	"os"
 
+	"go.temporal.io/sdk/activity"
+
 	"github.com/rs/zerolog"
+	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/interceptor"
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
