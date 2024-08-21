@@ -1,8 +1,9 @@
 package activities
 
 import (
-	"calendar-sync/pkg/persistence"
 	"context"
+
+	"calendar-sync/pkg/persistence"
 )
 
 type GetAllCopyConfigsResult struct {

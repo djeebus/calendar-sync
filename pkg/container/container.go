@@ -1,21 +1,22 @@
 package container
 
 import (
-	"calendar-sync/pkg"
-	"calendar-sync/pkg/logs"
-	"calendar-sync/pkg/persistence"
-	"calendar-sync/pkg/tracing"
 	"context"
 	"encoding/json"
+	"os"
+
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/workflow"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
-	"os"
+
+	"calendar-sync/pkg"
+	"calendar-sync/pkg/logs"
+	"calendar-sync/pkg/persistence"
+	"calendar-sync/pkg/tracing"
 )
 
 type Container struct {
@@ -65,6 +66,8 @@ func New(ctx context.Context, cfg pkg.Config) (Container, error) {
 }
 
 func (c Container) GetCalendarClient(ctx context.Context) (*calendar.Service, error) {
+	log := logs.GetLogger(ctx)
+
 	tokens, err := c.Database.GetTokens(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get tokens")

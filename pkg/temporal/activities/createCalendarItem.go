@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+
 	"github.com/pkg/errors"
 	"google.golang.org/api/calendar/v3"
 )

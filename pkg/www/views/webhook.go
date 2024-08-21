@@ -1,10 +1,11 @@
 package views
 
 import (
-	"calendar-sync/pkg/temporal/workflows"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/client"
+
+	"calendar-sync/pkg/temporal/workflows"
 )
 
 func (v Views) Webhook(c echo.Context) error {

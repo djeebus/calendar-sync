@@ -1,13 +1,15 @@
 package workflows
 
 import (
-	"calendar-sync/pkg/persistence"
-	"calendar-sync/pkg/temporal/activities"
+	"time"
+
 	"github.com/pkg/errors"
-	"github.com/rs/zerolog/log"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
-	"time"
+
+	"calendar-sync/pkg/logs"
+	"calendar-sync/pkg/persistence"
+	"calendar-sync/pkg/temporal/activities"
 )
 
 type ProcessWebhookEventArgs struct {
@@ -20,6 +22,8 @@ type ProcessWebhookEventArgs struct {
 }
 
 func ProcessWebhookEvent(ctx workflow.Context, args ProcessWebhookEventArgs) error {
+	log := logs.GetWorkflowLogger(ctx)
+
 	// channel has been created, this doesn't really represent an event
 	if args.ResourceState == "sync" {
 		return nil

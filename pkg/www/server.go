@@ -1,14 +1,15 @@
 package www
 
 import (
-	"calendar-sync/pkg/container"
-	"calendar-sync/pkg/logs"
-	"calendar-sync/pkg/tracing"
-	"calendar-sync/pkg/www/views"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pkg/errors"
 	"github.com/ziflex/lecho/v3"
+
+	"calendar-sync/pkg/container"
+	"calendar-sync/pkg/logs"
+	"calendar-sync/pkg/tracing"
+	"calendar-sync/pkg/www/views"
 )
 
 func NewServer(ctr container.Container) *echo.Echo {

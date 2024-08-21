@@ -1,16 +1,20 @@
 package workflows
 
 import (
-	"calendar-sync/pkg/persistence"
-	"calendar-sync/pkg/temporal/activities"
+	"time"
+
 	"github.com/pkg/errors"
-	"github.com/rs/zerolog/log"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
-	"time"
+
+	"calendar-sync/pkg/logs"
+	"calendar-sync/pkg/persistence"
+	"calendar-sync/pkg/temporal/activities"
 )
 
 func CopyAllWorkflow(ctx workflow.Context) error {
+	log := logs.GetWorkflowLogger(ctx)
+
 	retryPolicy := temporal.RetryPolicy{
 		InitialInterval:    1 * time.Minute,
 		BackoffCoefficient: 2.0,

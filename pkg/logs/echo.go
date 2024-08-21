@@ -1,9 +1,10 @@
 package logs
 
 import (
+	"time"
+
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog"
-	"time"
 )
 
 func CreateRequestLogger(logger zerolog.Logger) echo.MiddlewareFunc {

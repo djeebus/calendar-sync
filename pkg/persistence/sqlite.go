@@ -1,14 +1,16 @@
 package persistence
 
 import (
-	"calendar-sync/pkg"
 	"context"
 	"database/sql"
+	"strconv"
+	"time"
+
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
-	"strconv"
-	"time"
+
+	"calendar-sync/pkg"
 )
 
 const dbVersionSetting settingType = "db_version"
@@ -79,15 +81,20 @@ FROM invites
 	}
 	defer stmt.Close()
 
-	cur, err := stmt.QueryContext(ctx)
+	rows, err := stmt.QueryContext(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query context")
 	}
+	defer rows.Close()
+
+	if err = rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "failed to get rows")
+	}
 
 	var configs []InviteConfig
-	for cur.Next() {
+	for rows.Next() {
 		var config InviteConfig
-		if err = cur.Scan(&config.ID, &config.CalendarID, &config.EmailAddress); err != nil {
+		if err = rows.Scan(&config.ID, &config.CalendarID, &config.EmailAddress); err != nil {
 			return nil, errors.Wrap(err, "failed to scan row")
 		}
 
@@ -126,15 +133,20 @@ FROM copies
 	}
 	defer stmt.Close()
 
-	cur, err := stmt.QueryContext(ctx)
+	rows, err := stmt.QueryContext(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute statement")
 	}
+	defer rows.Close()
+
+	if err = rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "error getting rows")
+	}
 
 	var configs []CopyConfig
-	for cur.Next() {
+	for rows.Next() {
 		var config CopyConfig
-		if err = cur.Scan(&config.ID, &config.SourceID, &config.DestinationID); err != nil {
+		if err = rows.Scan(&config.ID, &config.SourceID, &config.DestinationID); err != nil {
 			return nil, errors.Wrap(err, "failed to scan row")
 		}
 		configs = append(configs, config)
@@ -273,15 +285,20 @@ FROM watches
 	}
 	defer stmt.Close()
 
-	cur, err := stmt.QueryContext(ctx)
+	rows, err := stmt.QueryContext(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute statement")
 	}
+	defer rows.Close()
+
+	if err = rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "failed to get rows")
+	}
 
 	var watches []WatchConfig
-	for cur.Next() {
+	for rows.Next() {
 		var watch WatchConfig
-		if err = cur.Scan(&watch.ID, &watch.CalendarID, &watch.WatchID, &watch.Token); err != nil {
+		if err = rows.Scan(&watch.ID, &watch.CalendarID, &watch.WatchID, &watch.Token); err != nil {
 			return nil, errors.Wrap(err, "failed to scan row")
 		}
 		watches = append(watches, watch)

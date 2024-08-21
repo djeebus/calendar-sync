@@ -1,8 +1,9 @@
 package activities
 
 import (
-	"calendar-sync/pkg/container"
 	"go.temporal.io/sdk/worker"
+
+	"calendar-sync/pkg/container"
 )
 
 type Activities struct {

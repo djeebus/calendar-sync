@@ -2,9 +2,12 @@ package logs
 
 import (
 	"context"
+	"os"
+
 	"github.com/rs/zerolog"
 	"go.temporal.io/sdk/interceptor"
 	"go.temporal.io/sdk/log"
+	"go.temporal.io/sdk/workflow"
 )
 
 type temporalLogger struct {
@@ -19,6 +22,7 @@ func (t temporalLogger) submitLog(level zerolog.Level, msg string, keyvals []int
 			if !ok {
 				l2 := c.Interface("invalid-key", keyvals[i]).Logger()
 				l2.Warn().Msg("key is not a string")
+
 				continue
 			}
 
@@ -74,10 +78,16 @@ func NewLoggingInterceptor() interceptor.WorkerInterceptor {
 
 type loggingInterceptor struct {
 	interceptor.WorkerInterceptor
+
+	log zerolog.Logger
 }
 
 func (i loggingInterceptor) InterceptActivity(ctx context.Context, next interceptor.ActivityInboundInterceptor) interceptor.ActivityInboundInterceptor {
 	return loggingActivityInterceptor{next}
+}
+
+func (i loggingInterceptor) InterceptWorkflow(ctx workflow.Context, next interceptor.WorkflowInboundInterceptor) interceptor.WorkflowInboundInterceptor {
+	return loggingWorkflowInterceptor{WorkflowInboundInterceptor: next, log: i.log}
 }
 
 type loggingActivityInterceptor struct {
@@ -86,4 +96,37 @@ type loggingActivityInterceptor struct {
 
 func (i loggingActivityInterceptor) ExecuteActivity(ctx context.Context, in *interceptor.ExecuteActivityInput) (interface{}, error) {
 	return i.ActivityInboundInterceptor.ExecuteActivity(ctx, in)
+}
+
+type loggingWorkflowInterceptor struct {
+	interceptor.WorkflowInboundInterceptor
+
+	log zerolog.Logger
+}
+
+type logKeyType struct{}
+
+var logKey = logKeyType{}
+
+func (i loggingWorkflowInterceptor) ExecuteWorkflow(ctx workflow.Context, in *interceptor.ExecuteWorkflowInput) (interface{}, error) {
+	logger := i.log.With().Logger()
+	ctx = workflow.WithValue(ctx, logKey, logger)
+
+	return i.WorkflowInboundInterceptor.ExecuteWorkflow(ctx, in)
+}
+
+func GetWorkflowLogger(ctx workflow.Context) *zerolog.Logger {
+	value := ctx.Value(logKey)
+	if value != nil {
+		if logger, ok := value.(*zerolog.Logger); ok {
+			return logger
+		}
+	}
+
+	if logger := zerolog.DefaultContextLogger; logger != nil {
+		return zerolog.DefaultContextLogger
+	}
+
+	logger := zerolog.New(os.Stdout)
+	return &logger
 }

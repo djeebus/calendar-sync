@@ -1,0 +1,46 @@
+linters:
+  enable-all: true
+
+  disable:
+    # deprecated
+    - execinquery
+    - gomnd
+
+    # conflicts
+    - gofumpt
+
+    # annoying
+    - canonicalheader
+    - cyclop
+    - depguard
+    - dupl
+    - errname
+    - exhaustruct
+    - forbidigo
+    - funlen
+    - gochecknoglobals
+    - ireturn
+    - lll
+    - mnd
+    - nestif
+    - nlreturn
+    - revive
+    - prealloc
+    - stylecheck
+    - tagalign
+    - tagliatelle
+    - testpackage
+    - unparam
+    - whitespace
+    - wrapcheck
+    - wsl
+    - varnamelen
+
+linters-settings:
+  gci:
+    skip-generated: true
+    custom-order: true
+    sections:
+      - standard
+      - default
+      - localmodule

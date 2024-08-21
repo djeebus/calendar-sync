@@ -1,12 +1,14 @@
 package workflows
 
 import (
-	"calendar-sync/pkg/temporal/activities"
-	"github.com/rs/zerolog/log"
+	"time"
+
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"google.golang.org/api/calendar/v3"
-	"time"
+
+	"calendar-sync/pkg/logs"
+	"calendar-sync/pkg/temporal/activities"
 )
 
 type InviteCalendarWorkflowArgs struct {
@@ -15,6 +17,8 @@ type InviteCalendarWorkflowArgs struct {
 }
 
 func InviteCalendarWorkflow(ctx workflow.Context, args InviteCalendarWorkflowArgs) error {
+	log := logs.GetWorkflowLogger(ctx)
+
 	// setup
 	var a activities.Activities
 
