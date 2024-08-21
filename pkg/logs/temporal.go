@@ -2,6 +2,7 @@ package logs
 
 import (
 	"context"
+	"go.temporal.io/sdk/activity"
 	"os"
 
 	"github.com/rs/zerolog"
@@ -83,7 +84,7 @@ type loggingInterceptor struct {
 }
 
 func (i loggingInterceptor) InterceptActivity(ctx context.Context, next interceptor.ActivityInboundInterceptor) interceptor.ActivityInboundInterceptor {
-	return loggingActivityInterceptor{next}
+	return loggingActivityInterceptor{next, i.log}
 }
 
 func (i loggingInterceptor) InterceptWorkflow(ctx workflow.Context, next interceptor.WorkflowInboundInterceptor) interceptor.WorkflowInboundInterceptor {
@@ -92,10 +93,32 @@ func (i loggingInterceptor) InterceptWorkflow(ctx workflow.Context, next interce
 
 type loggingActivityInterceptor struct {
 	interceptor.ActivityInboundInterceptor
+
+	log zerolog.Logger
 }
 
 func (i loggingActivityInterceptor) ExecuteActivity(ctx context.Context, in *interceptor.ExecuteActivityInput) (interface{}, error) {
-	return i.ActivityInboundInterceptor.ExecuteActivity(ctx, in)
+	info := activity.GetInfo(ctx)
+
+	logger := i.log.With().
+		Str("activity_name", info.ActivityType.Name).
+		Str("activity_id", info.ActivityID).
+		Bool("is_local", info.IsLocalActivity).
+		Logger()
+
+	ctx = SetLogger(ctx, logger)
+
+	logger.Info().Msg("starting activity")
+
+	result, err := i.ActivityInboundInterceptor.ExecuteActivity(ctx, in)
+
+	if err != nil {
+		logger.Warn().Err(err).Msg("activity finished with error")
+	} else {
+		logger.Info().Msg("activity finished")
+	}
+
+	return result, err
 }
 
 type loggingWorkflowInterceptor struct {
@@ -109,10 +132,25 @@ type logKeyType struct{}
 var logKey = logKeyType{}
 
 func (i loggingWorkflowInterceptor) ExecuteWorkflow(ctx workflow.Context, in *interceptor.ExecuteWorkflowInput) (interface{}, error) {
-	logger := i.log.With().Logger()
+	info := workflow.GetInfo(ctx)
+
+	logger := i.log.With().
+		Str("workflow_name", info.WorkflowType.Name).
+		Logger()
+
 	ctx = workflow.WithValue(ctx, logKey, logger)
 
-	return i.WorkflowInboundInterceptor.ExecuteWorkflow(ctx, in)
+	logger.Info().Msg("starting workflow")
+
+	result, err := i.WorkflowInboundInterceptor.ExecuteWorkflow(ctx, in)
+
+	if err != nil {
+		logger.Warn().Err(err).Msg("workflow finished with error")
+	} else {
+		logger.Info().Msg("workflow finished")
+	}
+
+	return result, err
 }
 
 func GetWorkflowLogger(ctx workflow.Context) *zerolog.Logger {
