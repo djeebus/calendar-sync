@@ -1,13 +1,15 @@
 package workflows
 
 import (
-	"calendar-sync/pkg/logs"
-	"calendar-sync/pkg/persistence"
-	"calendar-sync/pkg/temporal/activities"
+	"time"
+
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
-	"time"
+
+	"calendar-sync/pkg/logs"
+	"calendar-sync/pkg/persistence"
+	"calendar-sync/pkg/temporal/activities"
 )
 
 func CopyAllWorkflow(ctx workflow.Context) error {

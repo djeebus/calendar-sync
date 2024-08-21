@@ -1,12 +1,14 @@
 package views
 
 import (
-	"calendar-sync/pkg/logs"
 	"database/sql"
+	"strings"
+
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	"google.golang.org/api/calendar/v3"
-	"strings"
+
+	"calendar-sync/pkg/logs"
 )
 
 type calendarStub struct {

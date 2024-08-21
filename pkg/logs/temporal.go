@@ -2,11 +2,12 @@ package logs
 
 import (
 	"context"
+	"os"
+
 	"github.com/rs/zerolog"
 	"go.temporal.io/sdk/interceptor"
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
-	"os"
 )
 
 type temporalLogger struct {
@@ -21,6 +22,7 @@ func (t temporalLogger) submitLog(level zerolog.Level, msg string, keyvals []int
 			if !ok {
 				l2 := c.Interface("invalid-key", keyvals[i]).Logger()
 				l2.Warn().Msg("key is not a string")
+
 				continue
 			}
 
@@ -110,7 +112,7 @@ func (i loggingWorkflowInterceptor) ExecuteWorkflow(ctx workflow.Context, in *in
 	logger := i.log.With().Logger()
 	ctx = workflow.WithValue(ctx, logKey, logger)
 
-	return i.ExecuteWorkflow(ctx, in)
+	return i.WorkflowInboundInterceptor.ExecuteWorkflow(ctx, in)
 }
 
 func GetWorkflowLogger(ctx workflow.Context) *zerolog.Logger {

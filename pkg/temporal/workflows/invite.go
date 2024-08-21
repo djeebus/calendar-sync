@@ -1,12 +1,14 @@
 package workflows
 
 import (
-	"calendar-sync/pkg/logs"
-	"calendar-sync/pkg/temporal/activities"
+	"time"
+
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"google.golang.org/api/calendar/v3"
-	"time"
+
+	"calendar-sync/pkg/logs"
+	"calendar-sync/pkg/temporal/activities"
 )
 
 type InviteCalendarWorkflowArgs struct {

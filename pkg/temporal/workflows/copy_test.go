@@ -1,19 +1,23 @@
 package workflows
 
 import (
-	"calendar-sync/pkg"
-	"calendar-sync/pkg/temporal/activities"
+	"os"
+	"testing"
+	"time"
+
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.temporal.io/sdk/testsuite"
 	"google.golang.org/api/calendar/v3"
-	"os"
-	"testing"
-	"time"
+
+	"calendar-sync/pkg"
+	"calendar-sync/pkg/temporal/activities"
 )
 
 func TestBuildPatch(t *testing.T) {
+	t.Parallel()
+
 	testcases := map[string]struct {
 		from, to calendar.Event
 		expected *calendar.Event
@@ -121,6 +125,8 @@ func TestBuildPatch(t *testing.T) {
 
 	for key, tc := range testcases {
 		t.Run(key, func(t *testing.T) {
+			t.Parallel()
+
 			log := zerolog.New(os.Stdout)
 			actual := buildPatch(&log, tc.from, tc.to)
 			if tc.expected == nil {
@@ -133,6 +139,8 @@ func TestBuildPatch(t *testing.T) {
 }
 
 func TestCopyCalendarWorkflow(t *testing.T) {
+	t.Parallel()
+
 	var ts testsuite.WorkflowTestSuite
 	env := ts.NewTestWorkflowEnvironment()
 

@@ -1,14 +1,16 @@
 package workflows
 
 import (
-	"calendar-sync/pkg"
-	"calendar-sync/pkg/logs"
-	"calendar-sync/pkg/temporal/activities"
+	"time"
+
 	"github.com/rs/zerolog"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"google.golang.org/api/calendar/v3"
-	"time"
+
+	"calendar-sync/pkg"
+	"calendar-sync/pkg/logs"
+	"calendar-sync/pkg/temporal/activities"
 )
 
 type CopyCalendarWorkflowArgs struct {
@@ -67,6 +69,7 @@ func CopyCalendarWorkflow(ctx workflow.Context, args CopyCalendarWorkflowArgs) e
 				f := workflow.ExecuteActivity(ctx, a.UpdateCalendarItem, updateArgs)
 				futures = append(futures, f)
 			}
+
 			continue
 		}
 
@@ -162,6 +165,7 @@ func diffSlice[P any, T comparable](p *patchable[P], field string, fn func(e *P)
 					Msgf("%s is different at index #%d", field, idx)
 
 				shouldPatch = true
+
 				break
 			}
 		}

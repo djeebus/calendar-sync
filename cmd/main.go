@@ -1,21 +1,23 @@
 package cmd
 
 import (
+	"context"
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
+	"go.temporal.io/sdk/client"
+
 	"calendar-sync/pkg"
 	"calendar-sync/pkg/container"
 	"calendar-sync/pkg/logs"
 	"calendar-sync/pkg/temporal"
 	"calendar-sync/pkg/temporal/workflows"
 	"calendar-sync/pkg/www"
-	"context"
-	"fmt"
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
-	"go.temporal.io/sdk/client"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 )
 
 var rootCmd = &cobra.Command{

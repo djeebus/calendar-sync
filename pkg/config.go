@@ -1,11 +1,12 @@
 package pkg
 
 import (
+	"reflect"
+	"time"
+
 	"github.com/caarlos0/env/v11"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
-	"reflect"
-	"time"
 )
 
 type Config struct {

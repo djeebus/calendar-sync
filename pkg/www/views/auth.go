@@ -1,17 +1,19 @@
 package views
 
 import (
-	"calendar-sync/pkg/logs"
 	"context"
+	"net/http"
+	"slices"
+	"time"
+
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/calendar/v3"
-	"net/http"
-	"slices"
-	"time"
+
+	"calendar-sync/pkg/logs"
 )
 
 const authCookieName = ".auth"

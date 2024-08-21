@@ -1,9 +1,10 @@
 package views
 
 import (
+	"net/url"
+
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
-	"net/url"
 )
 
 func (v Views) CreateCopyConfig(c echo.Context, values url.Values) error {

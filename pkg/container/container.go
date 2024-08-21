@@ -1,12 +1,10 @@
 package container
 
 import (
-	"calendar-sync/pkg"
-	"calendar-sync/pkg/logs"
-	"calendar-sync/pkg/persistence"
-	"calendar-sync/pkg/tracing"
 	"context"
 	"encoding/json"
+	"os"
+
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"go.temporal.io/sdk/client"
@@ -14,7 +12,11 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
-	"os"
+
+	"calendar-sync/pkg"
+	"calendar-sync/pkg/logs"
+	"calendar-sync/pkg/persistence"
+	"calendar-sync/pkg/tracing"
 )
 
 type Container struct {

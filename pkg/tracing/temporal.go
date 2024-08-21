@@ -2,6 +2,7 @@ package tracing
 
 import (
 	"context"
+
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/converter"
 	"go.temporal.io/sdk/workflow"

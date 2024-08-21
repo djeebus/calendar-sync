@@ -1,11 +1,13 @@
 package activities
 
 import (
-	"calendar-sync/pkg"
 	"context"
+	"time"
+
 	"github.com/pkg/errors"
 	"google.golang.org/api/calendar/v3"
-	"time"
+
+	"calendar-sync/pkg"
 )
 
 type GetCalendarEventsActivityArgs struct {

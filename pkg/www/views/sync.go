@@ -1,12 +1,14 @@
 package views
 
 import (
-	"calendar-sync/pkg/temporal/workflows"
+	"net/url"
+	"strconv"
+
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/client"
-	"net/url"
-	"strconv"
+
+	"calendar-sync/pkg/temporal/workflows"
 )
 
 func (v Views) SyncCopy(c echo.Context, vals url.Values) error {

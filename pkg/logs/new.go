@@ -1,11 +1,13 @@
 package logs
 
 import (
-	"calendar-sync/pkg"
-	"calendar-sync/pkg/tracing"
-	"github.com/rs/zerolog"
 	"io"
 	"os"
+
+	"github.com/rs/zerolog"
+
+	"calendar-sync/pkg"
+	"calendar-sync/pkg/tracing"
 )
 
 func New(cfg pkg.Config) zerolog.Logger {
