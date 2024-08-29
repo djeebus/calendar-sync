@@ -32,6 +32,7 @@ func (v Views) BeginAuth(c echo.Context) error {
 
 func (v Views) EndAuth(c echo.Context) error {
 	r := c.Request()
+	log := logs.GetLogger(r.Context())
 	ctx := context.Background() // this request is too important to cancel
 
 	if err := r.ParseForm(); err != nil {
@@ -44,6 +45,7 @@ func (v Views) EndAuth(c echo.Context) error {
 	}
 
 	if untrusted != trusted {
+		log.Warn().Msg("request state does not match stored state")
 		return errors.New("state does not match")
 	}
 
@@ -54,15 +56,23 @@ func (v Views) EndAuth(c echo.Context) error {
 	}
 
 	if token.RefreshToken == "" {
+		log.Info().Msg("new token does not have a refresh token")
 		dbTokens, err := v.ctr.Database.GetTokens(ctx)
-		if err == nil {
+		if err == nil && dbTokens.RefreshToken != "" {
+			log.Info().Msg("populating refresh token from the database")
 			token.RefreshToken = dbTokens.RefreshToken
 		}
 	}
 
 	if token.RefreshToken == "" {
+		log.Info().Msg("received token does not have a refresh token")
 		return errors.New("token does not have a refresh token, need to re-auth")
 	}
+
+	log.Info().
+		Bool("is-valid", token.Valid()).
+		Time("expiration", token.Expiry).
+		Msg("token info")
 
 	client, err := v.ctr.GetCalendarClientWithToken(ctx, token)
 	if err != nil {
