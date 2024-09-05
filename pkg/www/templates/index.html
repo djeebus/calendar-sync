@@ -2,7 +2,13 @@
 <body>
 <div>Hello, world</div>
 {{ if .IsAuthenticated }}
-<div>you are authenticated</div>
+<div>
+    your auth expires on {{ .AuthExpiration.String() }}<br>
+    time until auth expires: {{ .AuthDuration.String() }}<br>
+    <form method="post">
+        <input type="submit" name="cmd" value="renew token">
+    </form>
+</div>
 
 <table>
     <caption>

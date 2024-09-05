@@ -85,7 +85,6 @@ func (c Container) GetCalendarClient(ctx context.Context) (*calendar.Service, er
 			if err = c.Database.UpdateTokens(ctx, tokens); err != nil {
 				return nil, errors.Wrap(err, "failed to store updated tokens")
 			}
-
 		}
 	}
 
