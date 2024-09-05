@@ -58,7 +58,6 @@ func (v Views) DeleteCopyConfig(c echo.Context, values url.Values) error {
 	}
 
 	return c.Redirect(302, "/")
-
 }
 
 func (v Views) DeleteInviteConfig(c echo.Context, values url.Values) error {
@@ -74,5 +73,4 @@ func (v Views) DeleteInviteConfig(c echo.Context, values url.Values) error {
 	}
 
 	return c.Redirect(302, "/")
-
 }

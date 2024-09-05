@@ -51,6 +51,8 @@ func NewServer(ctr container.Container) *echo.Echo {
 			return v.DeleteInviteConfig(c, vals)
 		case "delete copy":
 			return v.DeleteCopyConfig(c, vals)
+		case "renew token":
+			return v.RenewToken(c)
 		default:
 			return echo.ErrMethodNotAllowed
 		}

@@ -3,6 +3,7 @@ package views
 import (
 	"database/sql"
 	"strings"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
@@ -31,6 +32,7 @@ type copyStub struct {
 
 type dashboard struct {
 	IsAuthenticated bool
+	AuthExpiration  time.Time
 	Calendars       []calendarStub
 	Invitations     []invitationStub
 	Copies          []copyStub
@@ -99,7 +101,13 @@ func (v Views) Dashboard(c echo.Context) error {
 		})
 	}
 
+	tokens, err := v.ctr.Database.GetTokens(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to collect tokens")
+	}
+
 	model := dashboard{
+		AuthExpiration:  tokens.Expiry,
 		Calendars:       calendarStubs,
 		Copies:          copyStubs,
 		Invitations:     inviteStubs,
