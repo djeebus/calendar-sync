@@ -2,11 +2,14 @@ package templates
 
 import (
 	"bytes"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestTemplates(t *testing.T) {
+	t.Parallel()
+
 	templates := New()
 
 	var buf bytes.Buffer

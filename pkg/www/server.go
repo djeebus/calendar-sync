@@ -1,7 +1,6 @@
 package www
 
 import (
-	"calendar-sync/pkg/www/templates"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pkg/errors"
@@ -10,6 +9,7 @@ import (
 	"calendar-sync/pkg/container"
 	"calendar-sync/pkg/logs"
 	"calendar-sync/pkg/tracing"
+	"calendar-sync/pkg/www/templates"
 	"calendar-sync/pkg/www/views"
 )
 

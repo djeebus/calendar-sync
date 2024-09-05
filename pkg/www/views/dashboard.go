@@ -1,7 +1,6 @@
 package views
 
 import (
-	"calendar-sync/pkg/www/templates"
 	"database/sql"
 	"strings"
 	"time"
@@ -11,6 +10,7 @@ import (
 	"google.golang.org/api/calendar/v3"
 
 	"calendar-sync/pkg/logs"
+	"calendar-sync/pkg/www/templates"
 )
 
 func (v Views) Dashboard(c echo.Context) error {
