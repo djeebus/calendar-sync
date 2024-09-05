@@ -1,6 +1,7 @@
 package www
 
 import (
+	"calendar-sync/pkg/www/templates"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pkg/errors"
@@ -17,7 +18,7 @@ func NewServer(ctr container.Container) *echo.Echo {
 	e.Debug = true
 	e.HideBanner = true
 	e.Logger = lecho.From(ctr.Logger)
-	e.Renderer = newTemplates()
+	e.Renderer = templates.New()
 
 	v := views.New(ctr)
 

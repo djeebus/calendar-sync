@@ -1,6 +1,7 @@
 package views
 
 import (
+	"calendar-sync/pkg/www/templates"
 	"database/sql"
 	"strings"
 	"time"
@@ -11,33 +12,6 @@ import (
 
 	"calendar-sync/pkg/logs"
 )
-
-type calendarStub struct {
-	ID         string
-	Label      string
-	AccessRole string
-}
-
-type invitationStub struct {
-	ID           int
-	Calendar     calendarStub
-	EmailAddress string
-}
-
-type copyStub struct {
-	ID          int
-	Source      calendarStub
-	Destination calendarStub
-}
-
-type dashboard struct {
-	IsAuthenticated bool
-	AuthExpiration  time.Time
-	AuthDuration    time.Duration
-	Calendars       []calendarStub
-	Invitations     []invitationStub
-	Copies          []copyStub
-}
 
 func (v Views) Dashboard(c echo.Context) error {
 	ctx := c.Request().Context()
@@ -51,11 +25,11 @@ func (v Views) Dashboard(c echo.Context) error {
 		return errors.Wrap(err, "failed to create client")
 	}
 
-	var calendarStubs []calendarStub
-	calendarStubsById := make(map[string]calendarStub)
+	var calendarStubs []templates.CalendarStub
+	calendarStubsById := make(map[string]templates.CalendarStub)
 	if err = client.CalendarList.List().Pages(ctx, func(list *calendar.CalendarList) error {
 		for _, c := range list.Items {
-			stub := calendarStub{
+			stub := templates.CalendarStub{
 				AccessRole: c.AccessRole,
 				ID:         c.Id,
 				Label:      c.Summary,
@@ -76,26 +50,26 @@ func (v Views) Dashboard(c echo.Context) error {
 		return errors.Wrap(err, "failed to list calendars")
 	}
 
-	var inviteStubs []invitationStub
+	var inviteStubs []templates.InvitationStub
 	invites, err := v.ctr.Database.GetInviteConfigs(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to collect invites")
 	}
 	for _, i := range invites {
-		inviteStubs = append(inviteStubs, invitationStub{
+		inviteStubs = append(inviteStubs, templates.InvitationStub{
 			ID:           i.ID,
 			Calendar:     calendarStubsById[i.CalendarID],
 			EmailAddress: i.EmailAddress,
 		})
 	}
 
-	var copyStubs []copyStub
+	var copyStubs []templates.CopyStub
 	copies, err := v.ctr.Database.GetCopyConfigs(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to collect copies")
 	}
 	for _, cs := range copies {
-		copyStubs = append(copyStubs, copyStub{
+		copyStubs = append(copyStubs, templates.CopyStub{
 			ID:          cs.ID,
 			Source:      calendarStubsById[cs.SourceID],
 			Destination: calendarStubsById[cs.DestinationID],
@@ -107,9 +81,9 @@ func (v Views) Dashboard(c echo.Context) error {
 		return errors.Wrap(err, "failed to collect tokens")
 	}
 
-	model := dashboard{
-		AuthDuration:    time.Until(tokens.Expiry),
-		AuthExpiration:  tokens.Expiry,
+	model := templates.Dashboard{
+		AuthDuration:    time.Until(tokens.Expiry).String(),
+		AuthExpiration:  tokens.Expiry.String(),
 		Calendars:       calendarStubs,
 		Copies:          copyStubs,
 		Invitations:     inviteStubs,
