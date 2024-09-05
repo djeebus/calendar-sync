@@ -3,8 +3,8 @@
 <div>Hello, world</div>
 {{ if .IsAuthenticated }}
 <div>
-    your auth expires on {{ .AuthExpiration.String() }}<br>
-    time until auth expires: {{ .AuthDuration.String() }}<br>
+    your auth expires on {{ .AuthExpiration }}<br>
+    time until auth expires: {{ .AuthDuration }}<br>
     <form method="post">
         <input type="submit" name="cmd" value="renew token">
     </form>

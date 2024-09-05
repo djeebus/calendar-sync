@@ -1,5 +1,5 @@
 argocd 2.9.3
 earthly 0.8.11
-golang 1.22.3
-golangci-lint 1.60.1
+golang 1.22.6
+golangci-lint 1.60.3
 temporal 0.11.0

@@ -2,6 +2,8 @@ module calendar-sync
 
 go 1.22
 
+toolchain go1.22.6
+
 require (
 	github.com/caarlos0/env/v11 v11.2.2
 	github.com/golang-jwt/jwt/v5 v5.2.1

@@ -1,6 +1,6 @@
 VERSION 0.8
 
-ARG --global ALPINE_VERSION="3.18"
+ARG --global ALPINE_VERSION="3.19"
 
 ci:
     BUILD +lint

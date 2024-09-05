@@ -16,6 +16,7 @@ linters:
     - dupl
     - errname
     - exhaustruct
+    - exportloopref
     - forbidigo
     - funlen
     - gochecknoglobals

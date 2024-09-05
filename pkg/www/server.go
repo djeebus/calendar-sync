@@ -9,6 +9,7 @@ import (
 	"calendar-sync/pkg/container"
 	"calendar-sync/pkg/logs"
 	"calendar-sync/pkg/tracing"
+	"calendar-sync/pkg/www/templates"
 	"calendar-sync/pkg/www/views"
 )
 
@@ -17,7 +18,7 @@ func NewServer(ctr container.Container) *echo.Echo {
 	e.Debug = true
 	e.HideBanner = true
 	e.Logger = lecho.From(ctr.Logger)
-	e.Renderer = newTemplates()
+	e.Renderer = templates.New()
 
 	v := views.New(ctr)
 
