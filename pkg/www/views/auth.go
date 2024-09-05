@@ -213,6 +213,9 @@ func (v Views) WipeTokenIfInvalid(next echo.HandlerFunc) echo.HandlerFunc {
 func (v Views) RenewToken(c echo.Context) error {
 	ctx := c.Request().Context()
 	tokens, err := v.ctr.Database.GetTokens(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to get tokens")
+	}
 
 	ts := v.ctr.OAuth2Config.TokenSource(ctx, tokens)
 	tokens, err = ts.Token()

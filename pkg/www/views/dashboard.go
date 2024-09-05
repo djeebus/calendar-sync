@@ -33,6 +33,7 @@ type copyStub struct {
 type dashboard struct {
 	IsAuthenticated bool
 	AuthExpiration  time.Time
+	AuthDuration    time.Duration
 	Calendars       []calendarStub
 	Invitations     []invitationStub
 	Copies          []copyStub
@@ -107,6 +108,7 @@ func (v Views) Dashboard(c echo.Context) error {
 	}
 
 	model := dashboard{
+		AuthDuration:    time.Until(tokens.Expiry),
 		AuthExpiration:  tokens.Expiry,
 		Calendars:       calendarStubs,
 		Copies:          copyStubs,
