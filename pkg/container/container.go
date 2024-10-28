@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
@@ -57,7 +58,7 @@ func New(ctx context.Context, cfg pkg.Config) (Container, error) {
 		return ctr, errors.Wrap(err, "failed to dial the temporal server")
 	}
 
-	ctr.OAuth2Config, err = readConfig(cfg.ClientSecretsPath)
+	ctr.OAuth2Config, err = readConfig(cfg.ClientSecretsPath, cfg.RedirectURL)
 	if err != nil {
 		return ctr, errors.Wrap(err, "failed to read client secrets")
 	}
@@ -66,33 +67,20 @@ func New(ctx context.Context, cfg pkg.Config) (Container, error) {
 }
 
 func (c Container) GetCalendarClient(ctx context.Context) (*calendar.Service, error) {
-	log := logs.GetLogger(ctx)
-
 	tokens, err := c.Database.GetTokens(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get tokens")
-	}
-
-	if tokens.RefreshToken != "" {
-		if !tokens.Valid() {
-			log.Info().Msg("token is invalid, refreshing")
-			ts := c.OAuth2Config.TokenSource(ctx, tokens)
-			tokens, err = ts.Token()
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to refresh token")
-			}
-
-			if err = c.Database.UpdateTokens(ctx, tokens); err != nil {
-				return nil, errors.Wrap(err, "failed to store updated tokens")
-			}
-		}
 	}
 
 	return c.GetCalendarClientWithToken(ctx, tokens)
 }
 
 func (c Container) GetCalendarClientWithToken(ctx context.Context, tokens *oauth2.Token) (*calendar.Service, error) {
-	oauth2client := c.OAuth2Config.Client(ctx, tokens)
+	tokenSource := c.OAuth2Config.TokenSource(ctx, tokens)     // refreshes tokens
+	tokenSource = newTokenPersistor(c.Database, tokenSource)   // persists new tokens
+	tokenSource = oauth2.ReuseTokenSource(tokens, tokenSource) // caches tokens in memory until expiry
+
+	oauth2client := oauth2.NewClient(ctx, tokenSource)
 	cal, err := calendar.NewService(ctx, option.WithHTTPClient(oauth2client))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create calendar")
@@ -101,7 +89,7 @@ func (c Container) GetCalendarClientWithToken(ctx context.Context, tokens *oauth
 	return cal, nil
 }
 
-func readConfig(filename string) (*oauth2.Config, error) {
+func readConfig(filename string, redirectURL string) (*oauth2.Config, error) {
 	var downloadedConfig struct {
 		Web struct {
 			ClientID                string   `json:"client_id"`
@@ -137,8 +125,15 @@ func readConfig(filename string) (*oauth2.Config, error) {
 		},
 	}
 
-	for _, redirectUri := range downloadedConfig.Web.RedirectUris {
-		model.RedirectURL = redirectUri
+	for _, expected := range downloadedConfig.Web.RedirectUris {
+		if expected == redirectURL {
+			model.RedirectURL = expected
+			break
+		}
+	}
+
+	if model.RedirectURL == "" {
+		return nil, fmt.Errorf("%s was not in %v", redirectURL, downloadedConfig.Web.RedirectUris)
 	}
 
 	return &model, nil

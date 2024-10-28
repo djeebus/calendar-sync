@@ -66,21 +66,21 @@ var rootCmd = &cobra.Command{
 func triggerScheduledJobs(ctx context.Context, ctr container.Container) {
 	log := logs.GetLogger(ctx)
 
-	opts1 := client.StartWorkflowOptions{
+	hourlySyncCheckOpts := client.StartWorkflowOptions{
 		ID:           "hourly-sync-check",
 		TaskQueue:    ctr.Config.TemporalTaskQueue,
 		CronSchedule: "0 * * * *",
 	}
-	if _, err := ctr.TemporalClient.ExecuteWorkflow(ctx, opts1, workflows.CopyAllWorkflow); err != nil {
+	if _, err := ctr.TemporalClient.ExecuteWorkflow(ctx, hourlySyncCheckOpts, workflows.CopyAllWorkflow); err != nil {
 		log.Err(err).Msg("failed to trigger copy all calendars cronjob")
 	}
 
-	opts2 := client.StartWorkflowOptions{
+	hourlyInviteCheck := client.StartWorkflowOptions{
 		ID:           "hourly-invite-check",
 		TaskQueue:    ctr.Config.TemporalTaskQueue,
 		CronSchedule: "15 * * * *",
 	}
-	if _, err := ctr.TemporalClient.ExecuteWorkflow(ctx, opts2, workflows.InviteAllWorkflow); err != nil {
+	if _, err := ctr.TemporalClient.ExecuteWorkflow(ctx, hourlyInviteCheck, workflows.InviteAllWorkflow); err != nil {
 		log.Err(err).Msg("failed to trigger invite all calendars cronjob")
 	}
 

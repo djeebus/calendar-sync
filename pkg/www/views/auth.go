@@ -26,7 +26,7 @@ func (v Views) BeginAuth(c echo.Context) error {
 		return err
 	}
 
-	url := v.ctr.OAuth2Config.AuthCodeURL(state, oauth2.AccessTypeOffline)
+	url := v.ctr.OAuth2Config.AuthCodeURL(state, oauth2.AccessTypeOffline, oauth2.ApprovalForce)
 	return c.Redirect(302, url)
 }
 
@@ -45,7 +45,10 @@ func (v Views) EndAuth(c echo.Context) error {
 	}
 
 	if untrusted != trusted {
-		log.Warn().Msg("request state does not match stored state")
+		log.Warn().
+			Str("expected", trusted).
+			Str("actual", untrusted).
+			Msg("request state does not match stored state")
 		return errors.New("state does not match")
 	}
 
@@ -53,15 +56,6 @@ func (v Views) EndAuth(c echo.Context) error {
 	token, err := v.ctr.OAuth2Config.Exchange(ctx, code)
 	if err != nil {
 		return errors.Wrap(err, "failed to exchange code for token")
-	}
-
-	if token.RefreshToken == "" {
-		log.Info().Msg("new token does not have a refresh token")
-		dbTokens, err := v.ctr.Database.GetTokens(ctx)
-		if err == nil && dbTokens.RefreshToken != "" {
-			log.Info().Msg("populating refresh token from the database")
-			token.RefreshToken = dbTokens.RefreshToken
-		}
 	}
 
 	if token.RefreshToken == "" {
@@ -173,7 +167,7 @@ func (v Views) isAuthCookieValid(ctx context.Context, cookie *http.Cookie) bool 
 		return []byte(v.ctr.Config.JwtSecretKey), nil
 	})
 	if err != nil {
-		log.Error().Err(err).Msg("failed to parse jwt")
+		log.Error().Err(err).Str("jwt", token.Raw).Msg("failed to parse jwt")
 		return false
 	}
 
