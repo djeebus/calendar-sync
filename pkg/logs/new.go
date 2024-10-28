@@ -20,6 +20,7 @@ func New(cfg pkg.Config) zerolog.Logger {
 
 	logger := zerolog.New(w)
 	logger = logger.Level(cfg.LogLevel)
+	logger.Info().Msgf("log level set to %s", cfg.LogLevel)
 
 	logger = logger.Hook(tracing.ZerologHook())
 
