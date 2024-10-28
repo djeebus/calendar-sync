@@ -1,15 +1,17 @@
 package container
 
 import (
-	"calendar-sync/pkg/persistence"
 	"context"
+
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2"
+
+	"calendar-sync/pkg/persistence"
 )
 
 type tokenPersistor struct {
-	ctx      context.Context
+	ctx      context.Context //nolint:containedctx
 	db       *persistence.Database
 	original *oauth2.Token
 	next     oauth2.TokenSource

@@ -3,7 +3,6 @@ package container
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
@@ -133,8 +132,10 @@ func readConfig(filename string, redirectURL string) (*oauth2.Config, error) {
 	}
 
 	if model.RedirectURL == "" {
-		return nil, fmt.Errorf("%s was not in %v", redirectURL, downloadedConfig.Web.RedirectUris)
+		return nil, errors.Wrapf(ErrInvalidRedirectURL, "%s was not in %v", redirectURL, downloadedConfig.Web.RedirectUris)
 	}
 
 	return &model, nil
 }
+
+var ErrInvalidRedirectURL = errors.New("invalid redirect URL")
