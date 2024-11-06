@@ -40,7 +40,7 @@ jobs:
               --image=ghcr.io/${{ github.repository }}:latest \
               --GOLANG_VERSION=${{ env.GOLANG }}
 
-      - uses: clowdhaus/argo-cd-action@v2.0.0
+      - uses: clowdhaus/argo-cd-action@v2.2.0
         env:
           ARGOCD_SERVER: argocd.thehideaway.social
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
