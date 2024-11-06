@@ -167,7 +167,7 @@ func (v Views) isAuthCookieValid(ctx context.Context, cookie *http.Cookie) bool 
 		return []byte(v.ctr.Config.JwtSecretKey), nil
 	})
 	if err != nil {
-		log.Error().Err(err).Str("jwt", token.Raw).Msg("failed to parse jwt")
+		log.Error().Err(err).Str("jwt", cookie.Value).Msg("failed to parse jwt")
 		return false
 	}
 

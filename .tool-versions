@@ -1,4 +1,4 @@
-argocd 2.9.3
+argocd 2.13.0
 earthly 0.8.11
 golang 1.22.6
 golangci-lint 1.60.3
