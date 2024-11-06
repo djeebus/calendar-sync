@@ -46,5 +46,5 @@ jobs:
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
         with:
           command: app actions run calendar-sync restart
-          options: --kind Deployment --resource-name calendar-sync
+          options: --kind Deployment --resource-name calendar-sync --loglevel debug
           version: ${{ env.ARGOCD }}
