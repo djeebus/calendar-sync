@@ -23,6 +23,11 @@ jobs:
       - uses: earthly/actions-setup@v1
         with: { version: "v${{ env.EARTHLY }}" }
 
+      - name: Show GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
       - name: Run tests
         shell: bash
         run: |
