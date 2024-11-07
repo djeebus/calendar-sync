@@ -34,4 +34,5 @@ runs:
           --push \
           +image \
             --image=${{ inputs.image }}:${{ inputs.tag }} \
-            --GOLANG_VERSION=${{ env.GOLANG }}
+            --GOLANG_VERSION=${{ env.GOLANG }} \
+            --COMMIT_SHA={{ env.GITHUB_SHA }}
