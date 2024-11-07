@@ -47,7 +47,12 @@ build:
 
     ENV CGO_ENABLED=1
     ARG --required COMMIT_SHA
-    RUN go build -o calendar-sync -ldflags "-X 'calendar-sync/cmd.CommitSHA=${COMMIT_SHA}' -X 'calendar-sync/cmd.BuildDate=$(date)'" .
+    ARG --required COMMIT_REF
+    RUN go build -o calendar-sync -ldflags " \
+        -X 'calendar-sync/cmd.CommitSHA=${COMMIT_SHA}' \
+        -X 'calendar-sync/cmd.BuildDate=$(date)' \
+        -X 'calendar-sync/cmd.CommitRef=${COMMIT_REF}' \
+    " .
 
     SAVE ARTIFACT calendar-sync AS LOCAL calendar-sync
 

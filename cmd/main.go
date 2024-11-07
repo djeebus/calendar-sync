@@ -22,6 +22,7 @@ import (
 )
 
 var CommitSHA string
+var CommitRef string
 var BuildDate string
 
 var rootCmd = &cobra.Command{
@@ -40,6 +41,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		log.Info().Msgf("commit sha: %s", CommitSHA)
+		log.Info().Msgf("commit ref: %s", CommitRef)
 		log.Info().Msgf("build date: %s", BuildDate)
 
 		ctr, err := container.New(ctx, cfg)
