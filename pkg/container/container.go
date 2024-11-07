@@ -15,13 +15,13 @@ import (
 
 	"calendar-sync/pkg"
 	"calendar-sync/pkg/logs"
-	"calendar-sync/pkg/persistence"
+	"calendar-sync/pkg/persistence/sqlite"
 	"calendar-sync/pkg/tracing"
 )
 
 type Container struct {
 	Config         pkg.Config
-	Database       *persistence.Database
+	Database       *sqlite.Database
 	OAuth2Config   *oauth2.Config
 	Logger         zerolog.Logger
 	TemporalClient client.Client
@@ -39,7 +39,7 @@ func New(ctx context.Context, cfg pkg.Config) (Container, error) {
 		Logger: logs.New(cfg),
 	}
 
-	ctr.Database, err = persistence.NewDatabase(ctx, cfg)
+	ctr.Database, err = sqlite.NewDatabase(ctx, cfg)
 	if err != nil {
 		return ctr, err
 	}

@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -24,22 +25,26 @@ func (a Activities) WatchCalendar(ctx context.Context, args WatchCalendarArgs) (
 		return result, errors.Wrap(err, "failed to create client")
 	}
 
-	channel := calendar.Channel{
+	channel := &calendar.Channel{
 		Id:      uuid.NewString(),
 		Type:    "web_hook",
 		Address: a.ctr.Config.WebhookUrl,
 		Token:   uuid.NewString(),
 	}
 
-	if _, err := client.Events.Watch(args.CalendarID, &channel).Do(); err != nil {
+	if channel, err = client.Events.Watch(args.CalendarID, channel).Do(); err != nil {
 		return result, errors.Wrap(err, "failed to watch events")
 	}
 
-	if err := a.ctr.Database.CreateWatchConfig(ctx, args.CalendarID, channel.Id, channel.Token); err != nil {
+	if err := a.ctr.Database.CreateWatchConfig(ctx, args.CalendarID, channel.Id, channel.Token, fromTimestamp(channel.Expiration)); err != nil {
 		return result, errors.Wrap(err, "failed to write row")
 	}
 
 	result.WatchID = channel.Id
 
 	return result, nil
+}
+
+func fromTimestamp(timestamp int64) time.Time {
+	return time.UnixMilli(timestamp)
 }

@@ -1,5 +1,7 @@
 package persistence
 
+import "time"
+
 type InviteConfig struct {
 	ID           int
 	CalendarID   string
@@ -17,4 +19,5 @@ type WatchConfig struct {
 	CalendarID string
 	WatchID    string
 	Token      string
+	Expiration time.Time
 }

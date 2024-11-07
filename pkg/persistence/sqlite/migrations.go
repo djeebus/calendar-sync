@@ -1,4 +1,4 @@
-package persistence
+package sqlite
 
 var migrations = map[int]string{
 	0: `
@@ -36,5 +36,8 @@ CREATE TABLE IF NOT EXISTS watches (
 
 CREATE UNIQUE INDEX IF NOT EXISTS watches_calendarID ON watches (calendarID);
 CREATE UNIQUE INDEX IF NOT EXISTS watches_watchID ON watches (watchID);
+`,
+	2: `
+ALTER TABLE watches ADD COLUMN expiration DATE;
 `,
 }

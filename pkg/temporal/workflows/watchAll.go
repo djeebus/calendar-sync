@@ -35,7 +35,14 @@ func WatchAll(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get watches")
 	}
-	watchConfigsByCalendarID := pkg.ToSet(watchConfigs, func(i persistence.WatchConfig) string {
+
+	goodWatches, badWatches := splitWatches(watchConfigs)
+
+	for _, watch := range badWatches {
+		futures = append(futures, deleteCalendar(ctx, watch.ID))
+	}
+
+	watchConfigsByCalendarID := pkg.ToSet(goodWatches, func(i persistence.WatchConfig) string {
 		return i.CalendarID
 	})
 
@@ -68,6 +75,21 @@ func WatchAll(ctx workflow.Context) error {
 	return nil
 }
 
+func splitWatches(configs []persistence.WatchConfig) ([]persistence.WatchConfig, []persistence.WatchConfig) {
+	var good, bad []persistence.WatchConfig
+
+	for _, config := range configs {
+		if !config.Expiration.IsZero() && config.Expiration.After(time.Now()) {
+			good = append(good, config)
+			continue
+		}
+
+		bad = append(bad, config)
+	}
+
+	return good, bad
+}
+
 func watchCalendar(
 	ctx workflow.Context, existingWatches map[string]struct{}, calendarID string, futures []workflow.Future,
 ) []workflow.Future {
@@ -95,4 +117,14 @@ func getWatches(ctx workflow.Context) ([]persistence.WatchConfig, error) {
 	}
 
 	return result.WatchConfigs, nil
+}
+
+func deleteCalendar(ctx workflow.Context, watchID int) workflow.Future {
+	var a activities.Activities
+
+	args := activities.DeleteWatchConfigArgs{
+		WatchID: watchID,
+	}
+	future := workflow.ExecuteActivity(ctx, a.DeleteWatchConfig, args)
+	return future
 }
