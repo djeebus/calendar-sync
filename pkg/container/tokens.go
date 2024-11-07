@@ -1,18 +1,17 @@
 package container
 
 import (
+	"calendar-sync/pkg/persistence/sqlite"
 	"context"
 
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2"
-
-	"calendar-sync/pkg/persistence"
 )
 
 type tokenPersistor struct {
 	ctx      context.Context //nolint:containedctx
-	db       *persistence.Database
+	db       *sqlite.Database
 	original *oauth2.Token
 	next     oauth2.TokenSource
 }
@@ -40,7 +39,7 @@ func (t *tokenPersistor) Token() (*oauth2.Token, error) {
 	return tok, nil
 }
 
-func newTokenPersistor(db *persistence.Database, tokens oauth2.TokenSource) *tokenPersistor {
+func newTokenPersistor(db *sqlite.Database, tokens oauth2.TokenSource) *tokenPersistor {
 	if db == nil {
 		panic("db must not be nil!")
 	}
