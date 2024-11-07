@@ -46,7 +46,8 @@ build:
     RUN apk add gcc libc-dev
 
     ENV CGO_ENABLED=1
-    RUN go build -o calendar-sync .
+    ARG --required COMMIT_SHA
+    RUN go build -o calendar-sync -ldflags "-X 'calendar-sync/cmd.CommitSHA=${COMMIT_SHA}' -X 'calendar-sync/cmd.BuildDate=$(date)'" .
 
     SAVE ARTIFACT calendar-sync AS LOCAL calendar-sync
 

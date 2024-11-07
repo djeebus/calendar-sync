@@ -41,6 +41,10 @@ func (t *tokenPersistor) Token() (*oauth2.Token, error) {
 }
 
 func newTokenPersistor(db *persistence.Database, tokens oauth2.TokenSource) *tokenPersistor {
+	if db == nil {
+		panic("db must not be nil!")
+	}
+
 	return &tokenPersistor{
 		db:   db,
 		next: tokens,

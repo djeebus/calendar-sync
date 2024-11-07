@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -20,6 +21,9 @@ import (
 	"calendar-sync/pkg/www"
 )
 
+var CommitSHA string
+var BuildDate string
+
 var rootCmd = &cobra.Command{
 	Use: "",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -34,6 +38,9 @@ var rootCmd = &cobra.Command{
 			fmt.Println(err.Error())
 			return
 		}
+
+		log.Info().Msgf("commit sha: %s", CommitSHA)
+		log.Info().Msgf("build date: %s", BuildDate)
 
 		ctr, err := container.New(ctx, cfg)
 		if err != nil {
