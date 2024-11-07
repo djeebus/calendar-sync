@@ -3,13 +3,13 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"go.temporal.io/sdk/client"
 
@@ -21,12 +21,13 @@ import (
 	"calendar-sync/pkg/www"
 )
 
-var CommitSHA string
-var CommitRef string
-var BuildDate string
+var CommitSHA = "unknown"
+var CommitRef = "unknown"
+var BuildDate = "unknown"
 
 var rootCmd = &cobra.Command{
-	Use: "",
+	Use:     "",
+	Version: fmt.Sprintf("SHA:%s, build:%s, ref:%s", CommitSHA, BuildDate, CommitRef),
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.Background()
 		ctx, cancel := context.WithCancel(ctx)

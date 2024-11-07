@@ -59,9 +59,12 @@ build:
 image:
     FROM alpine:${ALPINE_VERSION}
 
-    COPY +build/calendar-sync /bin/
+    ARG --required COMMIT_SHA
+    ARG --required COMMIT_REF
 
-    RUN /bin/calendar-sync --help
+    COPY (+build/calendar-sync --COMMIT_REF=${COMMIT_REF} --COMMIT_SHA=${COMMIT_SHA}) /bin/
+
+    RUN /bin/calendar-sync --version
 
 release:
     FROM +image
