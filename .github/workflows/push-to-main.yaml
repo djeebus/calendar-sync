@@ -37,10 +37,10 @@ jobs:
           earthly \
             --push \
             +release \
-              --image=ghcr.io/${{ github.repository }}:latest \
               --GOLANG_VERSION=${{ env.GOLANG }} \
-              --COMMIT_SHA=${{ env.GITHUB_SHA }} \
-              --COMMIT_REF=${{ env.GITHUB_REF }}
+              --COMMIT_SHA=${{ github.sha }} \
+              --COMMIT_REF=${{ github.ref }} \
+              --image=ghcr.io/${{ github.repository }}:latest
 
       - uses: clowdhaus/argo-cd-action@v2.2.0
         env:
