@@ -61,7 +61,7 @@ image:
 
     COPY +build/calendar-sync /bin/
 
-    RUN /bin/calendar-sync --help
+    RUN /bin/calendar-sync --version
 
 release:
     FROM +image
