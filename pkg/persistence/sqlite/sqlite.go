@@ -6,9 +6,10 @@ import (
 	"strconv"
 	"time"
 
-	"calendar-sync/pkg"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
+
+	"calendar-sync/pkg"
 )
 
 const dbVersionSetting settingType = "db_version"

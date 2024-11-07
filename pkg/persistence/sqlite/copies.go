@@ -1,9 +1,11 @@
 package sqlite
 
 import (
-	"calendar-sync/pkg/persistence"
 	"context"
+
 	"github.com/pkg/errors"
+
+	"calendar-sync/pkg/persistence"
 )
 
 func (d *Database) CreateCopyConfig(ctx context.Context, sourceCalendarID, destinationCalendarID string) error {

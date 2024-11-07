@@ -1,12 +1,13 @@
 package container
 
 import (
-	"calendar-sync/pkg/persistence/sqlite"
 	"context"
 
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2"
+
+	"calendar-sync/pkg/persistence/sqlite"
 )
 
 type tokenPersistor struct {

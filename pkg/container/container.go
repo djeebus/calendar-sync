@@ -1,7 +1,6 @@
 package container
 
 import (
-	"calendar-sync/pkg/persistence/sqlite"
 	"context"
 	"encoding/json"
 	"os"
@@ -16,6 +15,7 @@ import (
 
 	"calendar-sync/pkg"
 	"calendar-sync/pkg/logs"
+	"calendar-sync/pkg/persistence/sqlite"
 	"calendar-sync/pkg/tracing"
 )
 

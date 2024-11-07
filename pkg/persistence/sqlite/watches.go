@@ -1,10 +1,12 @@
 package sqlite
 
 import (
-	"calendar-sync/pkg/persistence"
 	"context"
-	"github.com/pkg/errors"
 	"time"
+
+	"github.com/pkg/errors"
+
+	"calendar-sync/pkg/persistence"
 )
 
 func (d *Database) CreateWatchConfig(ctx context.Context, calendarID, watchID, token string, expiration time.Time) error {
@@ -81,6 +83,7 @@ func (d *Database) DeleteWatchConfig(ctx context.Context, watchID int) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to prepare")
 	}
+	defer stmt.Close()
 
 	if _, err = stmt.ExecContext(ctx, watchID); err != nil {
 		return errors.Wrap(err, "failed to exec")

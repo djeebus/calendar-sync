@@ -2,9 +2,10 @@ package sqlite
 
 import (
 	"context"
+	"time"
+
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
-	"time"
 )
 
 func (d *Database) GetTokens(ctx context.Context) (*oauth2.Token, error) {

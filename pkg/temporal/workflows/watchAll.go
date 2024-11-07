@@ -75,7 +75,9 @@ func WatchAll(ctx workflow.Context) error {
 	return nil
 }
 
-func splitWatches(configs []persistence.WatchConfig) (good []persistence.WatchConfig, bad []persistence.WatchConfig) {
+func splitWatches(configs []persistence.WatchConfig) ([]persistence.WatchConfig, []persistence.WatchConfig) {
+	var good, bad []persistence.WatchConfig
+
 	for _, config := range configs {
 		if !config.Expiration.IsZero() && config.Expiration.After(time.Now()) {
 			good = append(good, config)
@@ -85,7 +87,7 @@ func splitWatches(configs []persistence.WatchConfig) (good []persistence.WatchCo
 		bad = append(bad, config)
 	}
 
-	return
+	return good, bad
 }
 
 func watchCalendar(
