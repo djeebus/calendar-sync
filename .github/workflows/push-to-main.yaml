@@ -38,7 +38,9 @@ jobs:
             --push \
             +release \
               --image=ghcr.io/${{ github.repository }}:latest \
-              --GOLANG_VERSION=${{ env.GOLANG }}
+              --GOLANG_VERSION=${{ env.GOLANG }} \
+              --COMMIT_SHA=${{ env.GITHUB_SHA }} \
+              --COMMIT_REF=${{ env.GITHUB_REF }}
 
       - uses: clowdhaus/argo-cd-action@v2.2.0
         env:

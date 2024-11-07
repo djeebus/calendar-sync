@@ -30,4 +30,6 @@ jobs:
             +ci \
               --GOLANG_VERSION=${{ env.GOLANG }} \
               --GOLANGCILINT_VERSION=${{ env.GOLANGCI_LINT }} \
+              --COMMIT_SHA=${{ env.GITHUB_SHA }} \
+              --COMMIT_REF=${{ env.GITHUB_REF }} \
               --image=${{ env.FS_IMAGE }}:${{ env.FS_TAG }}
