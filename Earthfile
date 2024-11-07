@@ -1,6 +1,8 @@
 VERSION 0.8
 
 ARG --global ALPINE_VERSION="3.19"
+ARG --global COMMIT_SHA="unknown"
+ARG --global COMMIT_REF="unknown"
 
 ci:
     BUILD +lint
@@ -46,8 +48,6 @@ build:
     RUN apk add gcc libc-dev
 
     ENV CGO_ENABLED=1
-    ARG --required COMMIT_SHA
-    ARG --required COMMIT_REF
     RUN go build -o calendar-sync -ldflags " \
         -X 'calendar-sync/cmd.CommitSHA=${COMMIT_SHA}' \
         -X 'calendar-sync/cmd.BuildDate=$(date)' \
