@@ -36,16 +36,19 @@ func (t *tokenPersistor) Token() (*oauth2.Token, error) {
 		return nil, errors.Wrap(err, "t.db.SetTokens() failed")
 	}
 
+	t.original = tok
+
 	log.Debug().Msg("returning new tokens")
 	return tok, nil
 }
 
-func newTokenPersistor(db *sqlite.Database, tokens oauth2.TokenSource) *tokenPersistor {
+func newTokenPersistor(ctx context.Context, db *sqlite.Database, tokens oauth2.TokenSource) *tokenPersistor {
 	if db == nil {
 		panic("db must not be nil!")
 	}
 
 	return &tokenPersistor{
+		ctx:  ctx,
 		db:   db,
 		next: tokens,
 	}

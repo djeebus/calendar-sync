@@ -75,9 +75,9 @@ func (c Container) GetCalendarClient(ctx context.Context) (*calendar.Service, er
 }
 
 func (c Container) GetCalendarClientWithToken(ctx context.Context, tokens *oauth2.Token) (*calendar.Service, error) {
-	tokenSource := c.OAuth2Config.TokenSource(ctx, tokens)     // refreshes tokens
-	tokenSource = newTokenPersistor(c.Database, tokenSource)   // persists new tokens
-	tokenSource = oauth2.ReuseTokenSource(tokens, tokenSource) // caches tokens in memory until expiry
+	tokenSource := c.OAuth2Config.TokenSource(ctx, tokens)        // refreshes tokens
+	tokenSource = newTokenPersistor(ctx, c.Database, tokenSource) // persists new tokens
+	tokenSource = oauth2.ReuseTokenSource(tokens, tokenSource)    // caches tokens in memory until expiry
 
 	oauth2client := oauth2.NewClient(ctx, tokenSource)
 	cal, err := calendar.NewService(ctx, option.WithHTTPClient(oauth2client))
