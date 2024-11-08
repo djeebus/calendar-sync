@@ -3,9 +3,10 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"strconv"
+
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
-	"strconv"
 
 	"calendar-sync/pkg"
 )

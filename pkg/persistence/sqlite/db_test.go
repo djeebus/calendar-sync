@@ -1,17 +1,21 @@
 package sqlite
 
 import (
-	"calendar-sync/pkg"
 	"context"
 	"database/sql"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"calendar-sync/pkg"
 )
 
 func TestDatabase(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	cfg := pkg.Config{DatabaseDriver: "sqlite3", DatabaseSource: "test.db"}
 
@@ -44,6 +48,7 @@ func TestDatabase(t *testing.T) {
 	require.NoError(t, err)
 
 	state, err := db.GetState(ctx)
+	require.NoError(t, err)
 	assert.Equal(t, "some-state", state)
 
 	expiration := time.Now().UTC()

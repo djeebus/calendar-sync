@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"context"
+
 	"github.com/pkg/errors"
 )
 
