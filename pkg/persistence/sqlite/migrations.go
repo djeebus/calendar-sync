@@ -40,4 +40,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS watches_watchID ON watches (watchID);
 	2: `
 ALTER TABLE watches ADD COLUMN expiration DATE;
 `,
+	3: `
+ALTER TABLE watches DROP COLUMN expiration;
+ALTER TABLE watches ADD COLUMN expiration DATETIME;
+`,
 }

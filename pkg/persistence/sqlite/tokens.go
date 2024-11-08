@@ -117,3 +117,12 @@ func (d *Database) UpdateTokens(ctx context.Context, tokens *oauth2.Token) error
 
 	return nil
 }
+
+const expiryTimeFormat = time.RFC3339
+
+const (
+	accessTokenSetting  settingType = "accessToken"
+	refreshTokenSetting settingType = "refreshToken"
+	tokenTypeSetting    settingType = "tokenType"
+	expirySetting       settingType = "expiry"
+)
