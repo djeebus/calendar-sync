@@ -36,6 +36,7 @@ test:
 
     COPY . .
 
+    ENV CGO_ENABLED=1
     RUN go test ./...
 
 build:
