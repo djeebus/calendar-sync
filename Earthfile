@@ -36,6 +36,8 @@ test:
 
     COPY . .
 
+    RUN apk add gcc musl-dev
+
     ENV CGO_ENABLED=1
     RUN go test ./...
 
