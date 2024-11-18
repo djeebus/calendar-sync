@@ -9,7 +9,13 @@ import (
 	"calendar-sync/pkg/persistence"
 )
 
+var ErrMustHaveExpirationTime = errors.New("must have an expiration time")
+
 func (d *Database) CreateWatchConfig(ctx context.Context, calendarID, watchID, token string, expiration time.Time) error {
+	if expiration.IsZero() {
+		return ErrMustHaveExpirationTime
+	}
+
 	stmt, err := d.db.PrepareContext(ctx, `
 INSERT INTO watches (calendarID, watchID, token, expiration)
 VALUES (?, ?, ?, ?)
@@ -49,6 +55,7 @@ func (d *Database) GetWatchConfigs(ctx context.Context) ([]persistence.WatchConf
 	stmt, err := d.db.PrepareContext(ctx, `
 SELECT id, calendarID, watchID, token, expiration
 FROM watches
+WHERE expiration IS NOT NULL
 `)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to prepare statement")

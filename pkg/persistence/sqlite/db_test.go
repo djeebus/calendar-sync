@@ -63,6 +63,15 @@ func TestDatabase(t *testing.T) {
 	assert.Equal(t, expiration, w.Expiration)
 	assert.Equal(t, "calendar-id", w.CalendarID)
 
+	ws, err := db.GetWatchConfigs(ctx)
+	require.NoError(t, err)
+	assert.Len(t, ws, 1)
+	w = ws[0]
+	assert.Equal(t, "watch-id", w.WatchID)
+	assert.Equal(t, "token", w.Token)
+	assert.Equal(t, expiration, w.Expiration)
+	assert.Equal(t, "calendar-id", w.CalendarID)
+
 	err = db.DeleteWatchConfig(ctx, w.ID)
 	require.NoError(t, err)
 

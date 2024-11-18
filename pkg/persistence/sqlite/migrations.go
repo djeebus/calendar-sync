@@ -50,6 +50,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS watches_watchID ON watches (watchID);
 ALTER TABLE watches DROP COLUMN expiration;
 ALTER TABLE watches ADD COLUMN expiration DATETIME;
 `,
+	3: `
+ALTER TABLE watches DROP COLUMN expiration;
+ALTER TABLE watches ADD COLUMN expiration DATETIME NOT NULL DEFAULT (NOW());
+`,
 }
 
 func migrate(ctx context.Context, db *Database, conn *sql.DB) error {
