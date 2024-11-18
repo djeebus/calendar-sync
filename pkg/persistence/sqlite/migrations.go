@@ -3,8 +3,9 @@ package sqlite
 import (
 	"context"
 	"database/sql"
-	"github.com/pkg/errors"
 	"strconv"
+
+	"github.com/pkg/errors"
 )
 
 var migrations = map[int]string{
