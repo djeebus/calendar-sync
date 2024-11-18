@@ -42,11 +42,11 @@ jobs:
               --COMMIT_REF=${{ github.ref }} \
               --image=ghcr.io/${{ github.repository }}:latest
 
-      - uses: clowdhaus/argo-cd-action@v2.2.0
-        env:
-          ARGOCD_SERVER: argocd.thehideaway.social:443
-          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
-        with:
-          command: app actions run calendar-sync restart
-          options: --kind Deployment --resource-name calendar-sync --loglevel debug
-          version: ${{ env.ARGOCD }}
+#      - uses: clowdhaus/argo-cd-action@v2.2.0
+#        env:
+#          ARGOCD_SERVER: argocd.thehideaway.social:443
+#          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+#        with:
+#          command: app actions run calendar-sync restart
+#          options: --kind Deployment --resource-name calendar-sync --loglevel debug
+#          version: ${{ env.ARGOCD }}
