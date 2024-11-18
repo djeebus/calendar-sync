@@ -54,7 +54,7 @@ var rootCmd = &cobra.Command{
 
 		go startTemporalWorker(ctx, ctr, errs)
 
-		go startWebserver(ctx, ctr, cfg.Listen, errs)
+		go startWebserver(ctr, cfg.Listen, errs)
 
 		go func() {
 			// reschedule cron job every 24 hours.
@@ -69,6 +69,7 @@ var rootCmd = &cobra.Command{
 			}
 		}()
 
+		log.Info().Msg("waiting for interrupts ...")
 		waitForInterrupt(ctx, errs)
 	},
 }
@@ -76,6 +77,7 @@ var rootCmd = &cobra.Command{
 func triggerScheduledJobs(ctx context.Context, ctr container.Container) {
 	log := logs.GetLogger(ctx)
 
+	log.Info().Msg("scheduling the sync check workflow")
 	hourlySyncCheckOpts := client.StartWorkflowOptions{
 		ID:           "hourly-sync-check",
 		TaskQueue:    ctr.Config.TemporalTaskQueue,
@@ -85,6 +87,7 @@ func triggerScheduledJobs(ctx context.Context, ctr container.Container) {
 		log.Err(err).Msg("failed to trigger copy all calendars cronjob")
 	}
 
+	log.Info().Msg("scheduling the hourly invite check workflow")
 	hourlyInviteCheck := client.StartWorkflowOptions{
 		ID:           "hourly-invite-check",
 		TaskQueue:    ctr.Config.TemporalTaskQueue,
@@ -95,6 +98,7 @@ func triggerScheduledJobs(ctx context.Context, ctr container.Container) {
 	}
 
 	if ctr.Config.WebhookUrl != "" {
+		log.Info().Msg("starting the webhook check workflow")
 		opts3 := client.StartWorkflowOptions{
 			ID:           "webhook-check",
 			TaskQueue:    ctr.Config.TemporalTaskQueue,
@@ -107,20 +111,24 @@ func triggerScheduledJobs(ctx context.Context, ctr container.Container) {
 }
 
 func waitForInterrupt(ctx context.Context, errs chan error) {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	sigTerm := make(chan os.Signal, 1)
+	signal.Notify(sigTerm, os.Interrupt, syscall.SIGTERM)
 
 	select {
-	case <-c:
+	case s := <-sigTerm:
+		log.Info().Str("signal", s.String()).Msg("terminate caught")
 		break
-	case <-errs:
+	case err := <-errs:
+		log.Info().Err(err).Msg("error encountered")
 		break
 	case <-ctx.Done():
+		log.Info().Msg("global context canceled")
 		break
 	}
 }
 
-func startWebserver(ctx context.Context, ctr container.Container, listen string, errs chan error) {
+func startWebserver(ctr container.Container, listen string, errs chan error) {
+	log.Info().Msg("starting web server")
 	s := www.NewServer(ctr)
 	if err := s.Start(listen); err != nil {
 		errs <- err
@@ -128,6 +136,7 @@ func startWebserver(ctx context.Context, ctr container.Container, listen string,
 }
 
 func startTemporalWorker(ctx context.Context, ctr container.Container, errs chan error) {
+	log.Info().Msg("starting temporal worker")
 	w, err := temporal.NewWorker(ctx, ctr)
 	if err != nil {
 		errs <- errors.Wrap(err, "failed to create new worker")
