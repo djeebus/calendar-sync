@@ -15,7 +15,6 @@ import (
 
 	"calendar-sync/pkg"
 	"calendar-sync/pkg/container"
-	"calendar-sync/pkg/logs"
 	"calendar-sync/pkg/temporal"
 	"calendar-sync/pkg/temporal/workflows"
 	"calendar-sync/pkg/www"
@@ -57,6 +56,8 @@ var rootCmd = &cobra.Command{
 		go startWebserver(ctr, cfg.Listen, errs)
 
 		go func() {
+			triggerScheduledJobs(ctx, ctr)
+
 			// reschedule cron job every 24 hours.
 			// if temporal restarts, these jobs disappear
 			for {
@@ -75,8 +76,6 @@ var rootCmd = &cobra.Command{
 }
 
 func triggerScheduledJobs(ctx context.Context, ctr container.Container) {
-	log := logs.GetLogger(ctx)
-
 	log.Info().Msg("scheduling the sync check workflow")
 	hourlySyncCheckOpts := client.StartWorkflowOptions{
 		ID:           "hourly-sync-check",
