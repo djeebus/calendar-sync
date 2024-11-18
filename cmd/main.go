@@ -104,7 +104,10 @@ func triggerScheduledJobs(ctx context.Context, ctr container.Container, now bool
 			TaskQueue: ctr.Config.TemporalTaskQueue,
 		}
 		if now {
+			opts.ID += "-init"
+		} else {
 			opts.CronSchedule = scheduledTask.schedule
+
 		}
 
 		log.Info().Msgf("trigger scheduled job: %s", opts.ID)
