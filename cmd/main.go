@@ -56,7 +56,7 @@ var rootCmd = &cobra.Command{
 		go startWebserver(ctr, cfg.Listen, errs)
 
 		go func() {
-			triggerScheduledJobs(ctx, ctr)
+			triggerScheduledJobs(ctx, ctr, true)
 
 			// reschedule cron job every 24 hours.
 			// if temporal restarts, these jobs disappear
@@ -65,7 +65,7 @@ var rootCmd = &cobra.Command{
 				case <-ctx.Done():
 					return
 				case <-time.After(time.Hour * 24):
-					triggerScheduledJobs(ctx, ctr)
+					triggerScheduledJobs(ctx, ctr, false)
 				}
 			}
 		}()
@@ -75,36 +75,41 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-func triggerScheduledJobs(ctx context.Context, ctr container.Container) {
-	log.Info().Msg("scheduling the sync check workflow")
-	hourlySyncCheckOpts := client.StartWorkflowOptions{
-		ID:           "hourly-sync-check",
-		TaskQueue:    ctr.Config.TemporalTaskQueue,
-		CronSchedule: "0 * * * *",
-	}
-	if _, err := ctr.TemporalClient.ExecuteWorkflow(ctx, hourlySyncCheckOpts, workflows.CopyAllWorkflow); err != nil {
-		log.Err(err).Msg("failed to trigger copy all calendars cronjob")
-	}
+var scheduledTasks = []struct {
+	workflowID string
+	schedule   string
+	workflow   any
+}{
+	{
+		workflowID: "hourly-sync-check",
+		schedule:   "0 * * * *",
+		workflow:   workflows.CopyAllWorkflow,
+	},
+	{
+		workflowID: "hourly-invite-check",
+		schedule:   "15 * * * *",
+		workflow:   workflows.InviteAllWorkflow,
+	},
+	{
+		workflowID: "webhook-check",
+		schedule:   "30 * * * *",
+		workflow:   workflows.WatchAll,
+	},
+}
 
-	log.Info().Msg("scheduling the hourly invite check workflow")
-	hourlyInviteCheck := client.StartWorkflowOptions{
-		ID:           "hourly-invite-check",
-		TaskQueue:    ctr.Config.TemporalTaskQueue,
-		CronSchedule: "15 * * * *",
-	}
-	if _, err := ctr.TemporalClient.ExecuteWorkflow(ctx, hourlyInviteCheck, workflows.InviteAllWorkflow); err != nil {
-		log.Err(err).Msg("failed to trigger invite all calendars cronjob")
-	}
-
-	if ctr.Config.WebhookUrl != "" {
-		log.Info().Msg("starting the webhook check workflow")
-		opts3 := client.StartWorkflowOptions{
-			ID:           "webhook-check",
-			TaskQueue:    ctr.Config.TemporalTaskQueue,
-			CronSchedule: "30 * * * *",
+func triggerScheduledJobs(ctx context.Context, ctr container.Container, now bool) {
+	for _, scheduledTask := range scheduledTasks {
+		opts := client.StartWorkflowOptions{
+			ID:        scheduledTask.workflowID,
+			TaskQueue: ctr.Config.TemporalTaskQueue,
 		}
-		if _, err := ctr.TemporalClient.ExecuteWorkflow(ctx, opts3, workflows.WatchAll); err != nil {
-			log.Err(err).Msg("failed to trigger watch all calendars cronjob")
+		if now {
+			opts.CronSchedule = scheduledTask.schedule
+		}
+
+		log.Info().Msgf("trigger scheduled job: %s", opts.ID)
+		if _, err := ctr.TemporalClient.ExecuteWorkflow(ctx, opts, scheduledTask.workflow); err != nil {
+			log.Err(err).Msgf("failed to trigger %q job", opts.ID)
 		}
 	}
 }
