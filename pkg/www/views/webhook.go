@@ -1,18 +1,22 @@
 package views
 
 import (
+	"calendar-sync/pkg/logs"
+	"context"
+	"fmt"
 	"github.com/labstack/echo/v4"
-	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
+	"net/http"
 
 	"calendar-sync/pkg/tasks/workflows"
 )
 
 func (v Views) Webhook(c echo.Context) error {
 	req := c.Request()
-
+	requestLogger := logs.GetLogger(req.Context())
 	reqHeaders := req.Header
+	logHeaders(requestLogger, reqHeaders)
 
-	ctx := c.Request().Context()
 	args := workflows.ProcessWebhookEventArgs{
 		ChannelID:     reqHeaders.Get("X-Goog-Channel-ID"),
 		MessageNumber: reqHeaders.Get("X-Goog-Message-Number"),
@@ -21,10 +25,24 @@ func (v Views) Webhook(c echo.Context) error {
 		ResourceUri:   reqHeaders.Get("X-Goog-Resource-URI"),
 		ChannelToken:  reqHeaders.Get("X-Goog-Channel-Token"),
 	}
-	if err := v.workflows.ProcessWebhookEvent(ctx, args); err != nil {
-		return errors.Wrap(err, "failed to trigger workflow")
-	}
+
+	go v.background(c, func(ctx context.Context) {
+		if err := v.workflows.ProcessWebhookEvent(ctx, args); err != nil {
+			logger := logs.GetLogger(ctx)
+			logger.Error().Err(err).Msg("failed to trigger workflow")
+		}
+	})
 
 	c.Response().WriteHeader(200)
 	return nil
+}
+
+func logHeaders(logger *zerolog.Logger, headers http.Header) {
+	w := logger.Info()
+
+	for key, values := range headers {
+		w = w.Strs(fmt.Sprintf("header=%s", key), values)
+	}
+
+	w.Msg("webhook received")
 }

@@ -60,17 +60,14 @@ WHERE id = ?`)
 	return config, nil
 }
 
-func (d *Database) GetCopyConfigs(ctx context.Context) ([]persistence.CopyConfig, error) {
-	stmt, err := d.db.PrepareContext(ctx, `
-SELECT id, sourceID, destinationID
-FROM copies
-`)
+func (d *Database) queryForCopyConfigs(ctx context.Context, query string, args ...any) ([]persistence.CopyConfig, error) {
+	stmt, err := d.db.PrepareContext(ctx, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to prepare statement")
 	}
 	defer stmt.Close()
 
-	rows, err := stmt.QueryContext(ctx)
+	rows, err := stmt.QueryContext(ctx, args...)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute statement")
 	}
@@ -90,4 +87,19 @@ FROM copies
 	}
 
 	return configs, nil
+}
+
+func (d *Database) GetCopyConfigs(ctx context.Context) ([]persistence.CopyConfig, error) {
+	return d.queryForCopyConfigs(ctx, `
+SELECT id, sourceID, destinationID
+FROM copies
+`)
+}
+
+func (d *Database) GetCopyConfigsBySourceCalendar(ctx context.Context, sourceCalendarID string) ([]persistence.CopyConfig, error) {
+	return d.queryForCopyConfigs(ctx, `
+SELECT id, sourceID, destinationID
+FROM copie
+WHERE sourceID = ?
+`, sourceCalendarID)
 }

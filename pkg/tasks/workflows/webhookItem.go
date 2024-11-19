@@ -1,6 +1,7 @@
 package workflows
 
 import (
+	"calendar-sync/pkg/logs"
 	"context"
 
 	"github.com/pkg/errors"
@@ -43,11 +44,9 @@ func (w *Workflows) ProcessWebhookEvent(ctx context.Context, args ProcessWebhook
 	}
 
 	switch args.ResourceState {
-	case "exists":
+	case "exists", "not_exists":
 		// resource was created or modified, do something!
-		return w.processEventUpsert(ctx, args, watch)
-	case "not_exists":
-		return w.processEventDelete(ctx, args, watch)
+		return w.processEventUpsert(ctx, args, watch, args.ResourceState == "not_exists")
 	default:
 		log.Warn().
 			Str("state", args.ResourceState).
@@ -57,14 +56,80 @@ func (w *Workflows) ProcessWebhookEvent(ctx context.Context, args ProcessWebhook
 	}
 }
 
-func (w *Workflows) processEventUpsert(ctx context.Context, args ProcessWebhookEventArgs, watch persistence.WatchConfig) error {
-	//result, err := w.a.GetCalendarEventsActivity(ctx, activities.GetCalendarEventsActivityArgs{CalendarID: watch.CalendarID})
-	//result.Calendar.Items
-	return nil
-}
+func (w *Workflows) processEventUpsert(
+	ctx context.Context,
+	args ProcessWebhookEventArgs,
+	watch persistence.WatchConfig,
+	isDelete bool,
+) error {
+	log := logs.GetLogger(ctx)
 
-func (w *Workflows) processEventDelete(ctx context.Context, args ProcessWebhookEventArgs, watch persistence.WatchConfig) error {
-	activityArgs := activities.RemoveCalendarItemArgs{CalendarID: watch.CalendarID, EventID: args.ResourceID}
-	_, err := w.a.RemoveCalendarItem(ctx, activityArgs)
-	return err
+	calendarItem, err := w.a.GetCalendarItemByItemID(ctx, activities.GetCalendarItemByItemIDArgs{
+		CalendarID: watch.CalendarID,
+		EventID:    args.ResourceID,
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to get calendar item")
+	}
+
+	configResult, err := w.a.GetCopyConfigsForSourceCalendar(ctx, activities.GetCopyConfigsForSourceCalendarArgs{
+		CalendarID: watch.CalendarID,
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to get coyp configs")
+	}
+
+	for _, config := range configResult.CopyConfigs {
+		result, err := w.a.FindDestinationWebcalEvent(ctx, activities.FindWebcalEventsArgs{
+			DestinationCalendarID: config.DestinationID,
+			SourceCalendarID:      config.SourceID,
+			SourceCalendarItemID:  args.ResourceID,
+		})
+		if err != nil {
+			return errors.Wrap(err, "failed to find webcal events")
+		}
+
+		// delete copied items
+		if isDelete {
+			for _, item := range result.Items {
+				if _, err := w.a.RemoveCalendarItem(ctx, activities.RemoveCalendarItemArgs{
+					CalendarID: config.DestinationID,
+					EventID:    item.Id,
+				}); err != nil {
+					log.Error().
+						Err(err).
+						Str("calendar-id", config.DestinationID).
+						Str("event-id", item.Id).
+						Msg("failed to delete calendar item")
+				}
+			}
+			continue
+		}
+
+		// create copied item
+		if len(result.Items) == 0 {
+			if _, err := w.a.CreateCalendarItem(ctx, activities.CreateCalendarItemArgs{
+				CalendarID: config.DestinationID,
+				Event:      toInsert(watch.CalendarID, calendarItem.Event),
+			}); err != nil {
+				return errors.Wrap(err, "failed to create calendar item")
+			}
+			continue
+		}
+
+		// update copied items
+		for _, item := range result.Items {
+			if patch := buildPatch(*log, *calendarItem.Event, *item); patch != nil {
+				if _, err := w.a.UpdateCalendarItem(ctx, activities.UpdateCalendarItemArgs{
+					CalendarID:     config.DestinationID,
+					CalendarItemID: item.Id,
+					Patch:          patch,
+				}); err != nil {
+					return errors.Wrap(err, "failed to copy calendar")
+				}
+			}
+		}
+	}
+
+	return nil
 }
