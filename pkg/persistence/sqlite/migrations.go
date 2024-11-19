@@ -3,6 +3,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"github.com/rs/zerolog/log"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -62,17 +63,24 @@ func migrate(ctx context.Context, db *Database, conn *sql.DB) error {
 	if err == nil && value != "" {
 		nextVersion, _ = strconv.Atoi(value)
 	}
+
 	for {
+		logger := log.With().Int("version", nextVersion).Logger()
+
 		query, ok := migrations[nextVersion]
 		if !ok {
 			break
 		}
+
+		logger.Info().Msg("migrating")
 		if _, err = conn.ExecContext(ctx, query); err != nil {
 			return errors.Wrapf(err, "failed to migrate to v%d", nextVersion)
 		}
+		logger.Info().Msg("storing new version")
 		if err = db.setSetting(ctx, dbVersionSetting, strconv.Itoa(nextVersion)); err != nil {
 			return errors.Wrap(err, "failed to persist db version")
 		}
+		logger.Info().Msg("storing new version")
 		nextVersion++
 	}
 	return nil
