@@ -58,9 +58,9 @@ func (w *Workflows) ProcessWebhookEvent(ctx context.Context, args ProcessWebhook
 }
 
 func (w *Workflows) processEventUpsert(ctx context.Context, args ProcessWebhookEventArgs, watch persistence.WatchConfig) error {
-	activityArgs := activities.UpsertCalendarEntryArgs{CalendarID: watch.CalendarID, EventID: args.ResourceID}
-	_, err := w.a.UpsertCalendarEntry(ctx, activityArgs)
-	return err
+	//result, err := w.a.GetCalendarEventsActivity(ctx, activities.GetCalendarEventsActivityArgs{CalendarID: watch.CalendarID})
+	//result.Calendar.Items
+	return nil
 }
 
 func (w *Workflows) processEventDelete(ctx context.Context, args ProcessWebhookEventArgs, watch persistence.WatchConfig) error {
