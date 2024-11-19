@@ -41,20 +41,13 @@ CREATE TABLE IF NOT EXISTS watches (
     calendarID 	TEXT 	NOT NULL,
     watchID    	TEXT 	NOT NULL,
     token    	TEXT 	NOT NULL,
-   	expiration	DATE
+   	expiration	DATE	NOT NULL
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS watches_calendarID ON watches (calendarID);
 CREATE UNIQUE INDEX IF NOT EXISTS watches_watchID ON watches (watchID);
 `,
-	2: `
-ALTER TABLE watches DROP COLUMN expiration;
-ALTER TABLE watches ADD COLUMN expiration DATETIME;
-`,
-	3: `
-ALTER TABLE watches DROP COLUMN expiration;
-ALTER TABLE watches ADD COLUMN expiration DATETIME NOT NULL DEFAULT (NOW());
-`,
+	2: ``,
 }
 
 func migrate(ctx context.Context, db *Database, conn *sql.DB) error {
