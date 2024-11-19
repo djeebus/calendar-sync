@@ -23,11 +23,6 @@ type Config struct {
 	DatabaseDriver string `env:"CS_DATABASE_DRIVER" envDefault:"sqlite3"`
 	DatabaseSource string `env:"CS_DATABASE_SOURCE" envDefault:"./database.db"`
 
-	TemporalHostPort  string `env:"CS_TEMPORAL_HOSTPORT"`
-	TemporalNamespace string `env:"CS_TEMPORAL_NAMESPACE"`
-	TemporalIdentity  string `env:"CS_TEMPORAL_IDENTITY"`
-	TemporalTaskQueue string `env:"CS_TEMPORAL_TASKQUEUE" envDefault:"default"`
-
 	JwtAlgorithm string        `env:"JWT_ALGORITHM" envDefault:"HS256"`
 	JwtDuration  time.Duration `env:"JWT_DURATION" envDefault:"24h"`
 	JwtIssuer    string        `env:"JWT_ISSUER" envDefault:"calendar-sync-web"`

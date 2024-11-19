@@ -15,6 +15,7 @@ type GetWatchResult struct {
 }
 
 func (a Activities) GetWatch(ctx context.Context, args GetWatchArgs) (GetWatchResult, error) {
+	ctx = setupLogger(ctx, "GetWatch")
 	watch, err := a.ctr.Database.GetWatchConfig(ctx, args.WatchID)
 	return GetWatchResult{Watch: watch}, err
 }

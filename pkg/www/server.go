@@ -8,19 +8,20 @@ import (
 
 	"calendar-sync/pkg/container"
 	"calendar-sync/pkg/logs"
+	"calendar-sync/pkg/tasks/workflows"
 	"calendar-sync/pkg/tracing"
 	"calendar-sync/pkg/www/templates"
 	"calendar-sync/pkg/www/views"
 )
 
-func NewServer(ctr container.Container) *echo.Echo {
+func NewServer(ctr container.Container, workflows *workflows.Workflows) *echo.Echo {
 	e := echo.New()
 	e.Debug = true
 	e.HideBanner = true
 	e.Logger = lecho.From(ctr.Logger)
 	e.Renderer = templates.New()
 
-	v := views.New(ctr)
+	v := views.New(ctr, workflows)
 
 	e.Use(tracing.GenerateCorrelationID())
 	e.Use(logs.CreateRequestLogger(ctr.Logger))

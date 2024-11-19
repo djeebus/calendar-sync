@@ -1,16 +1,14 @@
 package workflows
 
 import (
-	"time"
+	"context"
+	"sync"
 
 	"github.com/rs/zerolog"
-	"go.temporal.io/sdk/temporal"
-	"go.temporal.io/sdk/workflow"
 	"google.golang.org/api/calendar/v3"
 
 	"calendar-sync/pkg"
-	"calendar-sync/pkg/logs"
-	"calendar-sync/pkg/temporal/activities"
+	"calendar-sync/pkg/tasks/activities"
 )
 
 type CopyCalendarWorkflowArgs struct {
@@ -18,36 +16,18 @@ type CopyCalendarWorkflowArgs struct {
 	DestinationCalendarID string
 }
 
-func CopyCalendarWorkflow(ctx workflow.Context, args CopyCalendarWorkflowArgs) error {
-	// setup
-	var a activities.Activities
-	log := logs.GetWorkflowLogger(ctx)
-
-	retryPolicy := temporal.RetryPolicy{
-		InitialInterval:    1 * time.Minute,
-		BackoffCoefficient: 2.0,
-
-		MaximumAttempts:        1,
-		MaximumInterval:        1 * time.Hour,
-		NonRetryableErrorTypes: []string{},
-	}
-
-	options := workflow.ActivityOptions{
-		StartToCloseTimeout: 15 * time.Minute,
-		RetryPolicy:         &retryPolicy,
-	}
-
-	ctx = workflow.WithActivityOptions(ctx, options)
+func (w *Workflows) CopyCalendarWorkflow(ctx context.Context, args CopyCalendarWorkflowArgs) error {
+	ctx, log := setupLogger(ctx, "CopyCalendarWorkflow")
 
 	// get source events
-	sourceCalendarItems, err := getEvents(ctx, args.SourceCalendarID)
+	sourceCalendarItems, err := w.getEvents(ctx, args.SourceCalendarID)
 	if err != nil {
 		return err
 	}
 	sourceItemsByID := pkg.ToMap(sourceCalendarItems, func(item *calendar.Event) string { return item.Id })
 
 	// get destination events
-	destinationCalendarItems, err := getEvents(ctx, args.DestinationCalendarID)
+	destinationCalendarItems, err := w.getEvents(ctx, args.DestinationCalendarID)
 	if err != nil {
 		return err
 	}
@@ -57,7 +37,8 @@ func CopyCalendarWorkflow(ctx workflow.Context, args CopyCalendarWorkflowArgs) e
 	destinationItemsBySourceItemID := pkg.ToMap(destinationCalendarItems, func(item *calendar.Event) string { return getExtraByKey(item, pkg.SourceCalendarItemIDKey) })
 
 	// find missing destination events
-	var futures []workflow.Future
+	var wg sync.WaitGroup
+
 	for key, sourceItem := range sourceItemsByID {
 		if destItem, ok := destinationItemsBySourceItemID[key]; ok {
 			if patch := buildPatch(log, *sourceItem, *destItem); patch != nil {
@@ -66,19 +47,33 @@ func CopyCalendarWorkflow(ctx workflow.Context, args CopyCalendarWorkflowArgs) e
 					CalendarItemID: destItem.Id,
 					Patch:          patch,
 				}
-				f := workflow.ExecuteActivity(ctx, a.UpdateCalendarItem, updateArgs)
-				futures = append(futures, f)
+
+				wg.Add(1)
+				go func(args activities.UpdateCalendarItemArgs) {
+					wg.Done()
+					_, err := w.a.UpdateCalendarItem(ctx, updateArgs)
+					log.Error().Err(err).
+						Str("calendar-id", args.CalendarID).
+						Str("calendar-item-id", args.CalendarItemID).
+						Msg("failed to update calendar")
+				}(updateArgs)
 			}
 
 			continue
 		}
 
+		wg.Add(1)
 		createArgs := activities.CreateCalendarItemArgs{
 			Event:      toInsert(args.SourceCalendarID, sourceItem),
 			CalendarID: args.DestinationCalendarID,
 		}
-		f := workflow.ExecuteActivity(ctx, a.CreateCalendarItem, createArgs)
-		futures = append(futures, f)
+		go func() {
+			defer wg.Done()
+			_, err := w.a.CreateCalendarItem(ctx, createArgs)
+			log.Error().Err(err).
+				Str("calendar-id", args.DestinationCalendarID).
+				Msg("failed to create calendar item")
+		}()
 	}
 
 	// find extra destination events
@@ -91,16 +86,18 @@ func CopyCalendarWorkflow(ctx workflow.Context, args CopyCalendarWorkflowArgs) e
 			CalendarID: args.DestinationCalendarID,
 			EventID:    destItem.Id,
 		}
-		f := workflow.ExecuteActivity(ctx, a.RemoveCalendarItem, removeArgs)
-		futures = append(futures, f)
+		go func() {
+			defer wg.Done()
+			_, err := w.a.RemoveCalendarItem(ctx, removeArgs)
+			if err != nil {
+				log.Error().Err(err).
+					Str("event-id", destItem.Id).
+					Msg("failed to remove calendar item")
+			}
+		}()
 	}
 
-	// collect futures
-	for _, f := range futures {
-		if err = f.Get(ctx, nil); err != nil {
-			log.Err(err).Msg("some task did not execute correctly")
-		}
-	}
+	wg.Wait()
 
 	return nil
 }
@@ -198,7 +195,7 @@ func diff[P any, T comparable](p *patchable[P], field string, fn func(e *P) *T) 
 	p.shouldPatch = true
 }
 
-func buildPatch(log *zerolog.Logger, from, to calendar.Event) *calendar.Event {
+func buildPatch(log zerolog.Logger, from, to calendar.Event) *calendar.Event {
 	logger := log.With().
 		Str("source_event_id", from.Id).
 		Str("destination_event_id", to.Id).
@@ -253,13 +250,12 @@ func getExtraByKey(item *calendar.Event, key string) string {
 	return item.ExtendedProperties.Private[key]
 }
 
-func getEvents(ctx workflow.Context, sourceID string) ([]*calendar.Event, error) {
-	var a activities.Activities
-	var sourceEventsResult activities.GetCalendarEventsActivityResult
+func (w *Workflows) getEvents(ctx context.Context, sourceID string) ([]*calendar.Event, error) {
 	sourceEventsArgs := activities.GetCalendarEventsActivityArgs{
 		CalendarID: sourceID,
 	}
-	if err := workflow.ExecuteActivity(ctx, a.GetCalendarEventsActivity, sourceEventsArgs).Get(ctx, &sourceEventsResult); err != nil {
+	sourceEventsResult, err := w.a.GetCalendarEventsActivity(ctx, sourceEventsArgs)
+	if err != nil {
 		return nil, err
 	}
 

@@ -16,6 +16,8 @@ type UpdateCalendarItemArgs struct {
 type UpdateCalendarItemResult struct{}
 
 func (a Activities) UpdateCalendarItem(ctx context.Context, args UpdateCalendarItemArgs) (UpdateCalendarItemResult, error) {
+	ctx = setupLogger(ctx, "UpdateCalendarItem")
+
 	var result UpdateCalendarItemResult
 
 	client, err := a.ctr.GetCalendarClient(ctx)
@@ -23,7 +25,7 @@ func (a Activities) UpdateCalendarItem(ctx context.Context, args UpdateCalendarI
 		return result, errors.Wrap(err, "failed to create client")
 	}
 
-	if _, err := client.Events.Patch(args.CalendarID, args.CalendarItemID, args.Patch).Do(); err != nil {
+	if _, err := client.Events.Patch(args.CalendarID, args.CalendarItemID, args.Patch).Context(ctx).Do(); err != nil {
 		return result, errors.Wrap(err, "failed to patch event")
 	}
 

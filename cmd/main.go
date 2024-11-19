@@ -8,21 +8,45 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
-	"go.temporal.io/sdk/client"
 
 	"calendar-sync/pkg"
 	"calendar-sync/pkg/container"
-	"calendar-sync/pkg/temporal"
-	"calendar-sync/pkg/temporal/workflows"
+	"calendar-sync/pkg/tasks/activities"
+	"calendar-sync/pkg/tasks/workflows"
 	"calendar-sync/pkg/www"
 )
 
 var CommitSHA = "unknown"
 var CommitRef = "unknown"
 var BuildDate = "unknown"
+
+type job struct {
+	workflowID string
+	workflow   func(ctx context.Context, w *workflows.Workflows) error
+}
+
+var jobs = []job{
+	{
+		workflow: func(ctx context.Context, w *workflows.Workflows) error {
+			return w.CopyAllWorkflow(ctx)
+		},
+		workflowID: "hourly-sync-check",
+	},
+	{
+		workflowID: "hourly-invite-check",
+		workflow: func(ctx context.Context, w *workflows.Workflows) error {
+			return w.InviteAllWorkflow(ctx)
+		},
+	},
+	{
+		workflowID: "hourly-webhook-check",
+		workflow: func(ctx context.Context, w *workflows.Workflows) error {
+			return w.WatchAll(ctx)
+		},
+	},
+}
 
 var rootCmd = &cobra.Command{
 	Use:     "",
@@ -51,12 +75,13 @@ var rootCmd = &cobra.Command{
 		}
 		defer ctr.Close()
 
-		go startTemporalWorker(ctx, ctr, errs)
+		a := activities.New(ctr)
+		w := workflows.New(a)
 
-		go startWebserver(ctr, cfg.Listen, errs)
+		go startWebserver(ctr, w, cfg.Listen, errs)
 
 		go func() {
-			triggerScheduledJobs(ctx, ctr, true)
+			triggerScheduledJobs(ctx, w, true, jobs)
 
 			// reschedule cron job every 24 hours.
 			// if temporal restarts, these jobs disappear
@@ -64,8 +89,8 @@ var rootCmd = &cobra.Command{
 				select {
 				case <-ctx.Done():
 					return
-				case <-time.After(time.Hour * 24):
-					triggerScheduledJobs(ctx, ctr, false)
+				case <-time.After(time.Hour):
+					triggerScheduledJobs(ctx, w, false, jobs)
 				}
 			}
 		}()
@@ -75,44 +100,16 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-var scheduledTasks = []struct {
-	workflowID string
-	schedule   string
-	workflow   any
-}{
-	{
-		workflowID: "hourly-sync-check",
-		schedule:   "0 * * * *",
-		workflow:   workflows.CopyAllWorkflow,
-	},
-	{
-		workflowID: "hourly-invite-check",
-		schedule:   "15 * * * *",
-		workflow:   workflows.InviteAllWorkflow,
-	},
-	{
-		workflowID: "webhook-check",
-		schedule:   "30 * * * *",
-		workflow:   workflows.WatchAll,
-	},
-}
-
-func triggerScheduledJobs(ctx context.Context, ctr container.Container, now bool) {
-	for _, scheduledTask := range scheduledTasks {
-		opts := client.StartWorkflowOptions{
-			ID:        scheduledTask.workflowID,
-			TaskQueue: ctr.Config.TemporalTaskQueue,
-		}
+func triggerScheduledJobs(ctx context.Context, w *workflows.Workflows, now bool, jobs []job) {
+	for _, job := range jobs {
+		jobID := job.workflowID
 		if now {
-			opts.ID += "-init"
-		} else {
-			opts.CronSchedule = scheduledTask.schedule
-
+			jobID += "-init"
 		}
 
-		log.Info().Msgf("trigger scheduled job: %s", opts.ID)
-		if _, err := ctr.TemporalClient.ExecuteWorkflow(ctx, opts, scheduledTask.workflow); err != nil {
-			log.Err(err).Msgf("failed to trigger %q job", opts.ID)
+		log.Info().Msgf("trigger scheduled job: %s", jobID)
+		if err := job.workflow(ctx, w); err != nil {
+			log.Err(err).Msgf("failed to trigger %q job", jobID)
 		}
 	}
 }
@@ -134,23 +131,11 @@ func waitForInterrupt(ctx context.Context, errs chan error) {
 	}
 }
 
-func startWebserver(ctr container.Container, listen string, errs chan error) {
+func startWebserver(ctr container.Container, workflows *workflows.Workflows, listen string, errs chan error) {
 	log.Info().Msg("starting web server")
-	s := www.NewServer(ctr)
+	s := www.NewServer(ctr, workflows)
 	if err := s.Start(listen); err != nil {
 		errs <- err
-	}
-}
-
-func startTemporalWorker(ctx context.Context, ctr container.Container, errs chan error) {
-	log.Info().Msg("starting temporal worker")
-	w, err := temporal.NewWorker(ctx, ctr)
-	if err != nil {
-		errs <- errors.Wrap(err, "failed to create new worker")
-	}
-
-	if err := w.Start(); err != nil {
-		errs <- errors.Wrap(err, "failed to start worker")
 	}
 }
 

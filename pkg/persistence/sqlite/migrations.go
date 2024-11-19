@@ -3,10 +3,10 @@ package sqlite
 import (
 	"context"
 	"database/sql"
-	"github.com/rs/zerolog/log"
 	"strconv"
 
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 )
 
 var migrations = map[int]string{

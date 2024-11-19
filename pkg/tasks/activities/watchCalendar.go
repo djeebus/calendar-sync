@@ -18,6 +18,8 @@ type WatchCalendarResult struct {
 }
 
 func (a Activities) WatchCalendar(ctx context.Context, args WatchCalendarArgs) (WatchCalendarResult, error) {
+	ctx = setupLogger(ctx, "WatchCalendar")
+
 	var result WatchCalendarResult
 
 	client, err := a.ctr.GetCalendarClient(ctx)
@@ -32,7 +34,7 @@ func (a Activities) WatchCalendar(ctx context.Context, args WatchCalendarArgs) (
 		Token:   uuid.NewString(),
 	}
 
-	if channel, err = client.Events.Watch(args.CalendarID, channel).Do(); err != nil {
+	if channel, err = client.Events.Watch(args.CalendarID, channel).Context(ctx).Do(); err != nil {
 		return result, errors.Wrap(err, "failed to watch events")
 	}
 
