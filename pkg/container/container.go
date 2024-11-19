@@ -3,12 +3,11 @@ package container
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"os"
 
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
-	"go.temporal.io/sdk/client"
-	"go.temporal.io/sdk/workflow"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
@@ -16,15 +15,13 @@ import (
 	"calendar-sync/pkg"
 	"calendar-sync/pkg/logs"
 	"calendar-sync/pkg/persistence/sqlite"
-	"calendar-sync/pkg/tracing"
 )
 
 type Container struct {
-	Config         pkg.Config
-	Database       *sqlite.Database
-	OAuth2Config   *oauth2.Config
-	Logger         zerolog.Logger
-	TemporalClient client.Client
+	Config       pkg.Config
+	Database     *sqlite.Database
+	OAuth2Config *oauth2.Config
+	Logger       zerolog.Logger
 }
 
 func (c Container) Close() {
@@ -42,19 +39,6 @@ func New(ctx context.Context, cfg pkg.Config) (Container, error) {
 	ctr.Database, err = sqlite.NewDatabase(ctx, cfg)
 	if err != nil {
 		return ctr, err
-	}
-
-	ctr.TemporalClient, err = client.DialContext(ctx, client.Options{
-		HostPort:  cfg.TemporalHostPort,
-		Namespace: cfg.TemporalNamespace,
-		Identity:  cfg.TemporalIdentity,
-		Logger:    logs.NewTemporalLogger(ctr.Logger),
-		ContextPropagators: []workflow.ContextPropagator{
-			tracing.NewCorrelationIDPropagator(),
-		},
-	})
-	if err != nil {
-		return ctr, errors.Wrap(err, "failed to dial the temporal server")
 	}
 
 	ctr.OAuth2Config, err = readConfig(cfg.ClientSecretsPath, cfg.RedirectURL)
@@ -80,12 +64,35 @@ func (c Container) GetCalendarClientWithToken(ctx context.Context, tokens *oauth
 	tokenSource = oauth2.ReuseTokenSource(tokens, tokenSource)    // caches tokens in memory until expiry
 
 	oauth2client := oauth2.NewClient(ctx, tokenSource)
+	oauth2client.Transport = addLogger(oauth2client.Transport)
 	cal, err := calendar.NewService(ctx, option.WithHTTPClient(oauth2client))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create calendar")
 	}
 
 	return cal, nil
+}
+
+type httpLogger struct {
+	next http.RoundTripper
+}
+
+func (h httpLogger) RoundTrip(request *http.Request) (*http.Response, error) {
+	log := logs.GetLogger(request.Context())
+	log.Info().Msgf("request: %s %s", request.Method, request.URL.String())
+	resp, err := h.next.RoundTrip(request)
+	if err != nil {
+		log.Error().Err(err).Msg("error")
+		return resp, err
+	}
+	log.Info().Msgf("response: %d %s", resp.StatusCode, resp.Status)
+	return resp, err
+}
+
+var _ http.RoundTripper = new(httpLogger)
+
+func addLogger(transport http.RoundTripper) http.RoundTripper {
+	return &httpLogger{next: transport}
 }
 
 func readConfig(filename string, redirectURL string) (*oauth2.Config, error) {

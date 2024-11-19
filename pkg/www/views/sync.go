@@ -6,9 +6,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
-	"go.temporal.io/sdk/client"
 
-	"calendar-sync/pkg/temporal/workflows"
+	"calendar-sync/pkg/tasks/workflows"
 )
 
 func (v Views) SyncCopy(c echo.Context, vals url.Values) error {
@@ -32,11 +31,7 @@ func (v Views) SyncCopy(c echo.Context, vals url.Values) error {
 		SourceCalendarID:      config.SourceID,
 		DestinationCalendarID: config.DestinationID,
 	}
-	opts := client.StartWorkflowOptions{
-		TaskQueue:                                v.ctr.Config.TemporalTaskQueue,
-		WorkflowExecutionErrorWhenAlreadyStarted: true,
-	}
-	if _, err := v.ctr.TemporalClient.ExecuteWorkflow(ctx, opts, workflows.CopyCalendarWorkflow, args); err != nil {
+	if err := v.workflows.CopyCalendarWorkflow(ctx, args); err != nil {
 		return errors.Wrap(err, "failed to execute workflow")
 	}
 
@@ -64,11 +59,7 @@ func (v Views) SyncInvite(c echo.Context, vals url.Values) error {
 		CalendarID: config.CalendarID,
 		EmailToAdd: config.EmailAddress,
 	}
-	opts := client.StartWorkflowOptions{
-		TaskQueue:                                v.ctr.Config.TemporalTaskQueue,
-		WorkflowExecutionErrorWhenAlreadyStarted: true,
-	}
-	if _, err := v.ctr.TemporalClient.ExecuteWorkflow(ctx, opts, workflows.InviteCalendarWorkflow, args); err != nil {
+	if err := v.workflows.InviteCalendarWorkflow(ctx, args); err != nil {
 		return errors.Wrap(err, "failed to execute workflow")
 	}
 

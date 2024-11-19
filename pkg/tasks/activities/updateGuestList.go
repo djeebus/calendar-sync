@@ -18,6 +18,7 @@ type InviteGuestResult struct {
 }
 
 func (a Activities) UpdateGuestList(ctx context.Context, args InviteGuestArgs) (InviteGuestResult, error) {
+	ctx = setupLogger(ctx, "GetWatch")
 	var result InviteGuestResult
 
 	client, err := a.ctr.GetCalendarClient(ctx)
@@ -31,7 +32,7 @@ func (a Activities) UpdateGuestList(ctx context.Context, args InviteGuestArgs) (
 			Email:            args.EmailAddressToInvite,
 		}),
 	})
-	if _, err = patch.Do(); err != nil {
+	if _, err = patch.Context(ctx).Do(); err != nil {
 		return result, errors.Wrap(err, "failed to patch event")
 	}
 

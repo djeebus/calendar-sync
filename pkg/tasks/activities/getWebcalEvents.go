@@ -25,6 +25,8 @@ func rfc3339(t time.Time) string {
 }
 
 func (a Activities) GetCalendarEventsActivity(ctx context.Context, args GetCalendarEventsActivityArgs) (GetCalendarEventsActivityResult, error) {
+	ctx = setupLogger(ctx, "GetCalendarEventsActivity")
+
 	var result GetCalendarEventsActivityResult
 
 	client, err := a.ctr.GetCalendarClient(ctx)
@@ -32,7 +34,7 @@ func (a Activities) GetCalendarEventsActivity(ctx context.Context, args GetCalen
 		return result, errors.Wrap(err, "failed to create client")
 	}
 
-	c, err := client.Calendars.Get(args.CalendarID).Do()
+	c, err := client.Calendars.Get(args.CalendarID).Context(ctx).Do()
 	if err != nil {
 		return result, errors.Wrap(err, "failed to retrieve calendar")
 	}

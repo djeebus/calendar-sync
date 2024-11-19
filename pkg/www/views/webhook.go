@@ -3,9 +3,8 @@ package views
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
-	"go.temporal.io/sdk/client"
 
-	"calendar-sync/pkg/temporal/workflows"
+	"calendar-sync/pkg/tasks/workflows"
 )
 
 func (v Views) Webhook(c echo.Context) error {
@@ -14,7 +13,6 @@ func (v Views) Webhook(c echo.Context) error {
 	reqHeaders := req.Header
 
 	ctx := c.Request().Context()
-	opts := client.StartWorkflowOptions{}
 	args := workflows.ProcessWebhookEventArgs{
 		ChannelID:     reqHeaders.Get("X-Goog-Channel-ID"),
 		MessageNumber: reqHeaders.Get("X-Goog-Message-Number"),
@@ -23,7 +21,7 @@ func (v Views) Webhook(c echo.Context) error {
 		ResourceUri:   reqHeaders.Get("X-Goog-Resource-URI"),
 		ChannelToken:  reqHeaders.Get("X-Goog-Channel-Token"),
 	}
-	if _, err := v.ctr.TemporalClient.ExecuteWorkflow(ctx, opts, workflows.ProcessWebhookEvent, args); err != nil {
+	if err := v.workflows.ProcessWebhookEvent(ctx, args); err != nil {
 		return errors.Wrap(err, "failed to trigger workflow")
 	}
 

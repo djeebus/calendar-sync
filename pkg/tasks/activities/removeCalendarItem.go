@@ -13,6 +13,8 @@ type RemoveCalendarItemArgs struct {
 type RemoveCalendarItemResult struct{}
 
 func (a Activities) RemoveCalendarItem(ctx context.Context, args RemoveCalendarItemArgs) (RemoveCalendarItemResult, error) {
+	ctx = setupLogger(ctx, "RemoveCalendarItem")
+
 	var result RemoveCalendarItemResult
 
 	client, err := a.ctr.GetCalendarClient(ctx)
@@ -20,7 +22,7 @@ func (a Activities) RemoveCalendarItem(ctx context.Context, args RemoveCalendarI
 		return result, errors.Wrap(err, "failed to create client")
 	}
 
-	if err := client.Events.Delete(args.CalendarID, args.EventID).Do(); err != nil {
+	if err := client.Events.Delete(args.CalendarID, args.EventID).Context(ctx).Do(); err != nil {
 		return result, errors.Wrap(err, "failed to delete event")
 	}
 
