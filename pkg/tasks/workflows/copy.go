@@ -69,10 +69,13 @@ func (w *Workflows) CopyCalendarWorkflow(ctx context.Context, args CopyCalendarW
 		}
 		go func() {
 			defer wg.Done()
-			_, err := w.a.CreateCalendarItem(ctx, createArgs)
-			log.Error().Err(err).
-				Str("calendar-id", args.DestinationCalendarID).
-				Msg("failed to create calendar item")
+			if _, err := w.a.CreateCalendarItem(ctx, createArgs); err != nil {
+				log.Error().
+					Err(err).
+					Str("source-calendar-id", args.SourceCalendarID).
+					Str("destination-calendar-id", args.DestinationCalendarID).
+					Msg("failed to create calendar item")
+			}
 		}()
 	}
 
