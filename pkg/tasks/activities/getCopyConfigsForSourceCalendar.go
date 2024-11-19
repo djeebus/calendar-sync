@@ -1,9 +1,11 @@
 package activities
 
 import (
-	"calendar-sync/pkg/persistence"
 	"context"
+
 	"github.com/pkg/errors"
+
+	"calendar-sync/pkg/persistence"
 )
 
 type GetCopyConfigsForSourceCalendarArgs struct {

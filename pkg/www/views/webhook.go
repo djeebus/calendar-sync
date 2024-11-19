@@ -1,13 +1,13 @@
 package views
 
 import (
-	"calendar-sync/pkg/logs"
 	"context"
-	"fmt"
-	"github.com/labstack/echo/v4"
-	"github.com/rs/zerolog"
 	"net/http"
 
+	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog"
+
+	"calendar-sync/pkg/logs"
 	"calendar-sync/pkg/tasks/workflows"
 )
 
@@ -41,7 +41,7 @@ func logHeaders(logger *zerolog.Logger, headers http.Header) {
 	w := logger.Info()
 
 	for key, values := range headers {
-		w = w.Strs(fmt.Sprintf("header=%s", key), values)
+		w = w.Strs("header="+key, values)
 	}
 
 	w.Msg("webhook received")

@@ -1,9 +1,11 @@
 package views
 
 import (
-	"calendar-sync/pkg/logs"
 	"context"
+
 	"github.com/labstack/echo/v4"
+
+	"calendar-sync/pkg/logs"
 )
 
 func (v Views) background(c echo.Context, fn func(ctx context.Context)) {

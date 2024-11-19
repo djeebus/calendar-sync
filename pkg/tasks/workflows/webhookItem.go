@@ -1,11 +1,11 @@
 package workflows
 
 import (
-	"calendar-sync/pkg/logs"
 	"context"
 
 	"github.com/pkg/errors"
 
+	"calendar-sync/pkg/logs"
 	"calendar-sync/pkg/persistence"
 	"calendar-sync/pkg/tasks/activities"
 )
@@ -86,7 +86,13 @@ func (w *Workflows) processEventUpsert(
 			SourceCalendarItemID:  args.ResourceID,
 		})
 		if err != nil {
-			return errors.Wrap(err, "failed to find webcal events")
+			log.Error().
+				Err(err).
+				Str("destination-calendar-id", config.DestinationID).
+				Str("source-calendar-id", config.SourceID).
+				Str("source-calendar-item-id", args.ResourceID).
+				Msg("failed to find copied calendar events")
+			continue
 		}
 
 		// delete copied items
@@ -112,7 +118,12 @@ func (w *Workflows) processEventUpsert(
 				CalendarID: config.DestinationID,
 				Event:      toInsert(watch.CalendarID, calendarItem.Event),
 			}); err != nil {
-				return errors.Wrap(err, "failed to create calendar item")
+				log.Error().
+					Err(err).
+					Str("source-calendar-id", watch.CalendarID).
+					Str("destination-calendar-id", config.DestinationID).
+					Str("event-id", calendarItem.Event.Id).
+					Msg("failed to create calendar item")
 			}
 			continue
 		}
@@ -125,7 +136,13 @@ func (w *Workflows) processEventUpsert(
 					CalendarItemID: item.Id,
 					Patch:          patch,
 				}); err != nil {
-					return errors.Wrap(err, "failed to copy calendar")
+					log.Error().
+						Err(err).
+						Str("source-calendar-id", watch.CalendarID).
+						Str("destination-calendar-id", config.DestinationID).
+						Str("source-event-id", calendarItem.Event.Id).
+						Str("destination-event-id", item.Id).
+						Msg("failed to update calendar item")
 				}
 			}
 		}

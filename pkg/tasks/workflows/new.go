@@ -1,7 +1,6 @@
 package workflows
 
 import (
-	"calendar-sync/pkg/container"
 	"context"
 
 	"github.com/rs/zerolog"
@@ -11,8 +10,7 @@ import (
 )
 
 type Workflows struct {
-	a   *activities.Activities
-	ctr container.Container
+	a *activities.Activities
 }
 
 func New(a *activities.Activities) *Workflows {
