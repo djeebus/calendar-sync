@@ -16,6 +16,8 @@ type GetCalendarItemByItemIDResult struct {
 }
 
 func (a Activities) GetCalendarItemByItemID(ctx context.Context, args GetCalendarItemByItemIDArgs) (GetCalendarItemByItemIDResult, error) {
+	ctx = setupLogger(ctx, "GetCalendarItemByItemID")
+
 	var result GetCalendarItemByItemIDResult
 
 	client, err := a.ctr.GetCalendarClient(ctx)

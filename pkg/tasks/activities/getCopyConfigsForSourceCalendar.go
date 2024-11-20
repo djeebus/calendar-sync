@@ -17,6 +17,8 @@ type GetCopyConfigsForSourceCalendarResult struct {
 }
 
 func (a Activities) GetCopyConfigsForSourceCalendar(ctx context.Context, args GetCopyConfigsForSourceCalendarArgs) (GetCopyConfigsForSourceCalendarResult, error) {
+	ctx = setupLogger(ctx, "GetCopyConfigsForSourceCalendar")
+
 	var result GetCopyConfigsForSourceCalendarResult
 
 	configs, err := a.ctr.Database.GetCopyConfigsBySourceCalendar(ctx, args.CalendarID)

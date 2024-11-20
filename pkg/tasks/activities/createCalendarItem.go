@@ -20,6 +20,7 @@ type CreateCalendarItemResult struct {
 
 func (a Activities) CreateCalendarItem(ctx context.Context, args CreateCalendarItemArgs) (CreateCalendarItemResult, error) {
 	ctx = setupLogger(ctx, "CreateCalendarItem")
+
 	log := logs.GetLogger(ctx)
 
 	var result CreateCalendarItemResult

@@ -17,6 +17,8 @@ type GetInviteConfigsForSourceCalendarResult struct {
 }
 
 func (a Activities) GetInviteConfigsForSourceCalendar(ctx context.Context, args GetInviteConfigsForSourceCalendarArgs) (GetInviteConfigsForSourceCalendarResult, error) {
+	ctx = setupLogger(ctx, "GetInviteConfigsForSourceCalendar")
+
 	var result GetInviteConfigsForSourceCalendarResult
 
 	configs, err := a.ctr.Database.GetInviteConfigsBySourceCalendar(ctx, args.CalendarID)

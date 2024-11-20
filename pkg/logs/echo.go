@@ -36,13 +36,11 @@ func LogRequest() echo.MiddlewareFunc {
 			r := c.Request()
 			ctx := r.Context()
 			logger := GetLogger(ctx)
-			logger.UpdateContext(func(c zerolog.Context) zerolog.Context {
-				c = c.Str("path", r.URL.Path)
-				c = c.Str("method", r.Method)
-				return c
-			})
 
-			logger.Info().Msg("request_begin")
+			logger.Info().
+				Str("method", r.Method).
+				Str("path", r.URL.Path).
+				Msg("request_begin")
 			start := time.Now()
 			result := next(c)
 			duration := time.Since(start)

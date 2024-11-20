@@ -18,7 +18,8 @@ type InviteGuestResult struct {
 }
 
 func (a Activities) UpdateGuestList(ctx context.Context, args InviteGuestArgs) (InviteGuestResult, error) {
-	ctx = setupLogger(ctx, "GetWatch")
+	ctx = setupLogger(ctx, "UpdateGuestList")
+
 	var result InviteGuestResult
 
 	client, err := a.ctr.GetCalendarClient(ctx)

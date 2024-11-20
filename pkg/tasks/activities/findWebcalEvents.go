@@ -21,6 +21,8 @@ type FindWebcalEventsResults struct {
 }
 
 func (a Activities) FindDestinationWebcalEvent(ctx context.Context, args FindWebcalEventsArgs) (FindWebcalEventsResults, error) {
+	ctx = setupLogger(ctx, "FindDestinationWebcalEvent")
+
 	var result FindWebcalEventsResults
 
 	client, err := a.ctr.GetCalendarClient(ctx)
