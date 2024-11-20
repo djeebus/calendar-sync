@@ -2,8 +2,8 @@ package workflows
 
 import (
 	"context"
-
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 
 	"calendar-sync/pkg/logs"
 	"calendar-sync/pkg/persistence"
@@ -72,14 +72,22 @@ func (w *Workflows) processEventUpsert(
 		return errors.Wrap(err, "failed to get calendar item")
 	}
 
-	configResult, err := w.a.GetCopyConfigsForSourceCalendar(ctx, activities.GetCopyConfigsForSourceCalendarArgs{
+	copyConfigResult, err := w.a.GetCopyConfigsForSourceCalendar(ctx, activities.GetCopyConfigsForSourceCalendarArgs{
 		CalendarID: watch.CalendarID,
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to get coyp configs")
+		return errors.Wrap(err, "failed to get copy configs")
 	}
 
-	for _, config := range configResult.CopyConfigs {
+	w.processInvites(ctx, watch.CalendarID, calendarItem)
+
+	w.processCopyConfigs(ctx, args, watch, isDelete, copyConfigResult, log, calendarItem)
+
+	return nil
+}
+
+func (w *Workflows) processCopyConfigs(ctx context.Context, args ProcessWebhookEventArgs, watch persistence.WatchConfig, isDelete bool, copyConfigResult activities.GetCopyConfigsForSourceCalendarResult, log *zerolog.Logger, calendarItem activities.GetCalendarItemByItemIDResult) {
+	for _, config := range copyConfigResult.CopyConfigs {
 		result, err := w.a.FindDestinationWebcalEvent(ctx, activities.FindWebcalEventsArgs{
 			DestinationCalendarID: config.DestinationID,
 			SourceCalendarID:      config.SourceID,
@@ -147,6 +155,37 @@ func (w *Workflows) processEventUpsert(
 			}
 		}
 	}
+}
 
-	return nil
+func (w *Workflows) processInvites(ctx context.Context, calendarID string, calendarItem activities.GetCalendarItemByItemIDResult) {
+	log := logs.GetLogger(ctx)
+
+	inviteConfigResult, err := w.a.GetInviteConfigsForSourceCalendar(ctx, activities.GetInviteConfigsForSourceCalendarArgs{
+		CalendarID: calendarID,
+	})
+	if err != nil {
+		log.Error().Err(err).Msg("failed to get invite configs")
+		return
+	}
+
+	for _, config := range inviteConfigResult.Configs {
+		if guestsContains(calendarItem.Event.Attendees, config.EmailAddress) {
+			continue
+		}
+
+		inviteArgs := activities.InviteGuestArgs{
+			CalendarID:           config.CalendarID,
+			CalendarItemID:       calendarItem.Event.Id,
+			EmailAddressToInvite: config.EmailAddress,
+			Attendees:            calendarItem.Event.Attendees,
+		}
+
+		if _, err := w.a.UpdateGuestList(ctx, inviteArgs); err != nil {
+			log.Error().Err(err).
+				Str("calendar-id", config.CalendarID).
+				Str("calendar-item-id", calendarItem.Event.Id).
+				Str("email-address", config.EmailAddress).
+				Msg("failed to update guest list")
+		}
+	}
 }

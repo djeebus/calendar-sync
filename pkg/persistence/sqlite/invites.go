@@ -60,17 +60,14 @@ WHERE id = ?`)
 	return config, nil
 }
 
-func (d *Database) GetInviteConfigs(ctx context.Context) ([]persistence.InviteConfig, error) {
-	stmt, err := d.db.PrepareContext(ctx, `
-SELECT id, calendarID, emailAddress 
-FROM invites
-`)
+func (d *Database) queryInviteConfigs(ctx context.Context, query string, args ...any) ([]persistence.InviteConfig, error) {
+	stmt, err := d.db.PrepareContext(ctx, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to prepare statement")
 	}
 	defer stmt.Close()
 
-	rows, err := stmt.QueryContext(ctx)
+	rows, err := stmt.QueryContext(ctx, args...)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query context")
 	}
@@ -91,4 +88,19 @@ FROM invites
 	}
 
 	return configs, nil
+}
+
+func (d *Database) GetInviteConfigs(ctx context.Context) ([]persistence.InviteConfig, error) {
+	return d.queryInviteConfigs(ctx, `
+SELECT id, calendarID, emailAddress 
+FROM invites
+`)
+}
+
+func (d *Database) GetInviteConfigsBySourceCalendar(ctx context.Context, calendarID string) ([]persistence.InviteConfig, error) {
+	return d.queryInviteConfigs(ctx, `
+SELECT id, calendarID, emailAddress 
+FROM invites
+WHERE calendarID = ?
+`, calendarID)
 }
