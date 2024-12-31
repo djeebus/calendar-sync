@@ -50,6 +50,9 @@ func NewDatabase(ctx context.Context, cfg pkg.Config) (*Database, error) {
 		cfg.DatabaseSource,
 		conn.Driver(),
 		databaseLogger{},
+		sqldblogger.WithPreparerLevel(sqldblogger.LevelDebug),
+		sqldblogger.WithQueryerLevel(sqldblogger.LevelDebug),
+		sqldblogger.WithExecerLevel(sqldblogger.LevelInfo),
 	)
 
 	db := &Database{db: conn}

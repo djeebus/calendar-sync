@@ -29,7 +29,7 @@ func (v Views) Webhook(c echo.Context) error {
 	go v.background(c, func(ctx context.Context) {
 		if err := v.workflows.ProcessWebhookEvent(ctx, args); err != nil {
 			logger := logs.GetLogger(ctx)
-			logger.Error().Err(err).Msg("failed to trigger workflow")
+			logger.Error().Str("channel-id", args.ChannelID).Err(err).Msg("failed to process webhook event")
 		}
 	})
 
