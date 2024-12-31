@@ -99,7 +99,7 @@ FROM copies
 func (d *Database) GetCopyConfigsBySourceCalendar(ctx context.Context, sourceCalendarID string) ([]persistence.CopyConfig, error) {
 	return d.queryForCopyConfigs(ctx, `
 SELECT id, sourceID, destinationID
-FROM copie
+FROM copies
 WHERE sourceID = ?
 `, sourceCalendarID)
 }
