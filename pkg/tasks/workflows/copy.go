@@ -50,7 +50,7 @@ func (w *Workflows) CopyCalendarWorkflow(ctx context.Context, args CopyCalendarW
 
 				wg.Add(1)
 				go func(args activities.UpdateCalendarItemArgs) {
-					wg.Done()
+					defer wg.Done()
 					_, err := w.a.UpdateCalendarItem(ctx, updateArgs)
 					log.Error().Err(err).
 						Str("calendar-id", args.CalendarID).
@@ -62,11 +62,11 @@ func (w *Workflows) CopyCalendarWorkflow(ctx context.Context, args CopyCalendarW
 			continue
 		}
 
-		wg.Add(1)
 		createArgs := activities.CreateCalendarItemArgs{
 			Event:      toInsert(args.SourceCalendarID, sourceItem),
 			CalendarID: args.DestinationCalendarID,
 		}
+		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			if _, err := w.a.CreateCalendarItem(ctx, createArgs); err != nil {
@@ -89,6 +89,8 @@ func (w *Workflows) CopyCalendarWorkflow(ctx context.Context, args CopyCalendarW
 			CalendarID: args.DestinationCalendarID,
 			EventID:    destItem.Id,
 		}
+
+		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			_, err := w.a.RemoveCalendarItem(ctx, removeArgs)

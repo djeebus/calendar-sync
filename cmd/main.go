@@ -84,7 +84,6 @@ var rootCmd = &cobra.Command{
 			triggerScheduledJobs(ctx, w, true, jobs)
 
 			// reschedule cron job every 24 hours.
-			// if temporal restarts, these jobs disappear
 			for {
 				select {
 				case <-ctx.Done():
