@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"calendar-sync/pkg/logs"
 	"calendar-sync/pkg/persistence"
 )
 
@@ -22,6 +23,11 @@ VALUES (?, ?)
 		return errors.Wrap(err, "failed to execute statement")
 	}
 
+	logs.GetLogger(ctx).Info().
+		Str("source-calendar-id", sourceCalendarID).
+		Str("destination-calendar-id", destinationCalendarID).
+		Msgf("created new copy config")
+
 	return nil
 }
 
@@ -37,6 +43,10 @@ WHERE id = ?`)
 	if _, err := stmt.ExecContext(ctx, copyID); err != nil {
 		return errors.Wrap(err, "failed to execute statement")
 	}
+
+	logs.GetLogger(ctx).Info().
+		Str("copy-id", copyID).
+		Msgf("deleted copy config")
 
 	return nil
 }

@@ -83,7 +83,7 @@ var rootCmd = &cobra.Command{
 		go func() {
 			triggerScheduledJobs(ctx, w, true, jobs)
 
-			// reschedule cron job every 24 hours.
+			// run cron job every 24 hours.
 			for {
 				select {
 				case <-ctx.Done():

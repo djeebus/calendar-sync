@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"calendar-sync/pkg/logs"
 	"calendar-sync/pkg/persistence"
 )
 
@@ -28,6 +29,10 @@ VALUES (?, ?, ?, ?)
 	if _, err := stmt.ExecContext(ctx, calendarID, watchID, token, expiration); err != nil {
 		return errors.Wrap(err, "failed to execute statement")
 	}
+
+	logs.GetLogger(ctx).Info().
+		Str("calendar-id", calendarID).
+		Msgf("created new watch config")
 
 	return nil
 }
@@ -95,6 +100,10 @@ func (d *Database) DeleteWatchConfig(ctx context.Context, watchID int) error {
 	if _, err = stmt.ExecContext(ctx, watchID); err != nil {
 		return errors.Wrap(err, "failed to exec")
 	}
+
+	logs.GetLogger(ctx).Info().
+		Int("watch-id", watchID).
+		Msgf("deleted watch config")
 
 	return nil
 }

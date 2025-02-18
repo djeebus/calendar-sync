@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"calendar-sync/pkg/logs"
 	"calendar-sync/pkg/persistence"
 )
 
@@ -22,6 +23,11 @@ VALUES (?, ?)
 		return errors.Wrap(err, "failed to execute statement")
 	}
 
+	logs.GetLogger(ctx).Info().
+		Str("calendar-id", calendarID).
+		Str("email-address", emailAddress).
+		Msgf("created invite config")
+
 	return nil
 }
 
@@ -37,6 +43,10 @@ WHERE id = ?`)
 	if _, err := stmt.ExecContext(ctx, inviteID); err != nil {
 		return errors.Wrap(err, "failed to execute statement")
 	}
+
+	logs.GetLogger(ctx).Info().
+		Str("invite-id", inviteID).
+		Msgf("deleted invite config")
 
 	return nil
 }
