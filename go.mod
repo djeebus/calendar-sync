@@ -1,7 +1,6 @@
 module calendar-sync
 
 go 1.22.7
-
 toolchain go1.23.6
 
 require (
@@ -17,7 +16,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/ziflex/lecho/v3 v3.7.0
 	golang.org/x/oauth2 v0.26.0
-	google.golang.org/api v0.221.0
+	google.golang.org/api v0.222.0
 )
 
 require (
