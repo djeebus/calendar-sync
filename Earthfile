@@ -1,12 +1,11 @@
 VERSION 0.8
 
-ARG --global ALPINE_VERSION="3.19"
+ARG --global ALPINE_VERSION="3.21"
 
 ci:
     BUILD +lint
     BUILD +test
     BUILD +image
-
 
 godeps:
     ARG --required GOLANG_VERSION
