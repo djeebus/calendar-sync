@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (d *Database) getSetting(ctx context.Context, name settingType) (string, error) {
+func (d *Database) GetSetting(ctx context.Context, name SettingType) (string, error) {
 	stmt, err := d.db.PrepareContext(ctx, `SELECT value FROM settings WHERE name = ?`)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to prepare statement")
@@ -21,7 +21,7 @@ func (d *Database) getSetting(ctx context.Context, name settingType) (string, er
 	return value, nil
 }
 
-func (d *Database) setSetting(ctx context.Context, name settingType, value string) error {
+func (d *Database) SetSetting(ctx context.Context, name SettingType, value string) error {
 	stmt, err := d.db.PrepareContext(ctx, `
 INSERT INTO settings(name, value) VALUES(?, ?)
 ON CONFLICT(name) DO 
@@ -40,7 +40,7 @@ WHERE excluded.name = settings.name
 	return nil
 }
 
-func (d *Database) removeSetting(ctx context.Context, name settingType) error {
+func (d *Database) removeSetting(ctx context.Context, name SettingType) error {
 	stmt, err := d.db.PrepareContext(ctx, `
 DELETE FROM settings
 WHERE name = ?
@@ -57,4 +57,4 @@ WHERE name = ?
 	return nil
 }
 
-type settingType string
+type SettingType string

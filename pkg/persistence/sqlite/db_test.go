@@ -1,7 +1,6 @@
-package sqlite
+package sqlite_test
 
 import (
-	"context"
 	"database/sql"
 	"os"
 	"testing"
@@ -11,15 +10,16 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"calendar-sync/pkg"
+	"calendar-sync/pkg/persistence/sqlite"
 )
 
 func TestDatabase(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := t.Context()
 	cfg := pkg.Config{DatabaseDriver: "sqlite3", DatabaseSource: "test.db"}
 
-	db, err := NewDatabase(ctx, cfg)
+	db, err := sqlite.NewDatabase(ctx, cfg)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		db.Close()
@@ -27,16 +27,16 @@ func TestDatabase(t *testing.T) {
 	})
 
 	// settings
-	var testKey settingType = "some-setting-key"
+	var testKey sqlite.SettingType = "some-setting-key"
 
-	val, err := db.getSetting(ctx, testKey)
+	val, err := db.GetSetting(ctx, testKey)
 	require.ErrorIs(t, err, sql.ErrNoRows)
 	assert.Equal(t, "", val)
 
-	err = db.setSetting(ctx, testKey, "some-value")
+	err = db.SetSetting(ctx, testKey, "some-value")
 	require.NoError(t, err)
 
-	val, err = db.getSetting(ctx, testKey)
+	val, err = db.GetSetting(ctx, testKey)
 	require.NoError(t, err)
 	assert.Equal(t, "some-value", val)
 
