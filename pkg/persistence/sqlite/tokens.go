@@ -9,22 +9,22 @@ import (
 )
 
 func (d *Database) GetTokens(ctx context.Context) (*oauth2.Token, error) {
-	accessToken, err := d.getSetting(ctx, accessTokenSetting)
+	accessToken, err := d.GetSetting(ctx, accessTokenSetting)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get access token")
 	}
 
-	refreshToken, err := d.getSetting(ctx, refreshTokenSetting)
+	refreshToken, err := d.GetSetting(ctx, refreshTokenSetting)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get refresh token")
 	}
 
-	tokenType, err := d.getSetting(ctx, tokenTypeSetting)
+	tokenType, err := d.GetSetting(ctx, tokenTypeSetting)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get token type setting")
 	}
 
-	expiryString, err := d.getSetting(ctx, expirySetting)
+	expiryString, err := d.GetSetting(ctx, expirySetting)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get expiry setting")
 	}
@@ -43,13 +43,13 @@ func (d *Database) GetTokens(ctx context.Context) (*oauth2.Token, error) {
 }
 
 func (d *Database) SetAccessToken(ctx context.Context, accessToken string) error {
-	return d.setSetting(ctx, accessTokenSetting, accessToken)
+	return d.SetSetting(ctx, accessTokenSetting, accessToken)
 }
 
 func (d *Database) SetExpiry(ctx context.Context, expiry time.Time) error {
 	expiryString := expiry.Format(expiryTimeFormat)
 
-	return d.setSetting(ctx, expirySetting, expiryString)
+	return d.SetSetting(ctx, expirySetting, expiryString)
 }
 
 var NoRefreshTokenErr = errors.New("no refresh token present")
@@ -60,7 +60,7 @@ func (d *Database) SetTokens(ctx context.Context, token *oauth2.Token) error {
 	}
 
 	var err error
-	if err = d.setSetting(ctx, refreshTokenSetting, token.RefreshToken); err != nil {
+	if err = d.SetSetting(ctx, refreshTokenSetting, token.RefreshToken); err != nil {
 		return errors.Wrap(err, "failed to store refresh token")
 	}
 
@@ -72,7 +72,7 @@ func (d *Database) SetTokens(ctx context.Context, token *oauth2.Token) error {
 		return errors.Wrap(err, "failed to store expiry")
 	}
 
-	if err = d.setSetting(ctx, tokenTypeSetting, token.TokenType); err != nil {
+	if err = d.SetSetting(ctx, tokenTypeSetting, token.TokenType); err != nil {
 		return errors.Wrap(err, "failed to store token type")
 	}
 
@@ -82,7 +82,7 @@ func (d *Database) SetTokens(ctx context.Context, token *oauth2.Token) error {
 func (d *Database) RemoveTokens(ctx context.Context) error {
 	var err error
 
-	for _, setting := range []settingType{
+	for _, setting := range []SettingType{
 		tokenTypeSetting,
 		refreshTokenSetting,
 		accessTokenSetting,
@@ -111,7 +111,7 @@ func (d *Database) UpdateTokens(ctx context.Context, tokens *oauth2.Token) error
 	}
 
 	// store new token type
-	if err = d.setSetting(ctx, tokenTypeSetting, tokens.TokenType); err != nil {
+	if err = d.SetSetting(ctx, tokenTypeSetting, tokens.TokenType); err != nil {
 		return errors.Wrap(err, "failed to store token type")
 	}
 
@@ -121,8 +121,8 @@ func (d *Database) UpdateTokens(ctx context.Context, tokens *oauth2.Token) error
 const expiryTimeFormat = time.RFC3339
 
 const (
-	accessTokenSetting  settingType = "accessToken"
-	refreshTokenSetting settingType = "refreshToken"
-	tokenTypeSetting    settingType = "tokenType"
-	expirySetting       settingType = "expiry"
+	accessTokenSetting  SettingType = "accessToken"
+	refreshTokenSetting SettingType = "refreshToken"
+	tokenTypeSetting    SettingType = "tokenType"
+	expirySetting       SettingType = "expiry"
 )

@@ -3,8 +3,7 @@ linters:
 
   disable:
     # deprecated
-    - execinquery
-    - gomnd
+    - tenv
 
     # conflicts
     - gofumpt
@@ -17,7 +16,6 @@ linters:
     - dupl
     - errname
     - exhaustruct
-    - exportloopref
     - forbidigo
     - funlen
     - gochecknoglobals

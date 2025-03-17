@@ -13,7 +13,7 @@ import (
 	"calendar-sync/pkg/logs"
 )
 
-const dbVersionSetting settingType = "db_version"
+const dbVersionSetting SettingType = "db_version"
 
 type databaseLogger struct {
 }

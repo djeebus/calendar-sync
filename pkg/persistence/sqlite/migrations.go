@@ -52,7 +52,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS watches_watchID ON watches (watchID);
 
 func migrate(ctx context.Context, db *Database, conn *sql.DB) error {
 	var nextVersion = 0
-	value, err := db.getSetting(ctx, dbVersionSetting)
+	value, err := db.GetSetting(ctx, dbVersionSetting)
 	if err == nil && value != "" {
 		nextVersion, _ = strconv.Atoi(value)
 	}
@@ -70,7 +70,7 @@ func migrate(ctx context.Context, db *Database, conn *sql.DB) error {
 			return errors.Wrapf(err, "failed to migrate to v%d", nextVersion)
 		}
 		logger.Info().Msg("storing new version")
-		if err = db.setSetting(ctx, dbVersionSetting, strconv.Itoa(nextVersion)); err != nil {
+		if err = db.SetSetting(ctx, dbVersionSetting, strconv.Itoa(nextVersion)); err != nil {
 			return errors.Wrap(err, "failed to persist db version")
 		}
 		logger.Info().Msg("storing new version")

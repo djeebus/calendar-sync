@@ -27,12 +27,13 @@ func NewServer(ctr container.Container, workflows *workflows.Workflows) *echo.Ec
 	e.Use(logs.CreateRequestLogger(ctr.Logger))
 	e.Use(logs.LogRequest())
 	e.Use(middleware.Recover())
-	e.Use(v.RequireClientToken("/auth/begin", "/auth/end", "/hooks/calendar"))
+	e.Use(v.RequireClientToken("/auth/begin", "/auth/end", "/hooks/calendar", "/-/status"))
 	e.Use(v.WipeTokenIfInvalid)
 
 	e.GET("/auth/begin", v.BeginAuth)
 	e.GET("/auth/end", v.EndAuth)
 	e.GET("/", v.Dashboard)
+	e.GET("/-/status", v.Status)
 	e.POST("/hooks/calendar", v.Webhook)
 	e.POST("/", func(c echo.Context) error {
 		vals, err := c.FormParams()
