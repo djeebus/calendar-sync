@@ -51,11 +51,12 @@ func (w *Workflows) CopyCalendarWorkflow(ctx context.Context, args CopyCalendarW
 				wg.Add(1)
 				go func(args activities.UpdateCalendarItemArgs) {
 					defer wg.Done()
-					_, err := w.a.UpdateCalendarItem(ctx, updateArgs)
-					log.Error().Err(err).
-						Str("calendar-id", args.CalendarID).
-						Str("calendar-item-id", args.CalendarItemID).
-						Msg("failed to update calendar")
+					if _, err := w.a.UpdateCalendarItem(ctx, updateArgs); err != nil {
+						log.Error().Err(err).
+							Str("calendar-id", args.CalendarID).
+							Str("calendar-item-id", args.CalendarItemID).
+							Msg("failed to update calendar")
+					}
 				}(updateArgs)
 			}
 
